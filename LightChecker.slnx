@@ -1,0 +1,6 @@
+﻿<Solution>
+  <Project Path="Zenject.csproj" />
+  <Project Path="Zenject-ReflectionBaking-Editor.csproj" />
+  <Project Path="Zenject-Editor.csproj" />
+  <Project Path="Zenject-PoolMonitor-Editor.csproj" />
+</Solution>
