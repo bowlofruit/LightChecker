@@ -6,16 +6,17 @@ apply from: '../shared/common.gradle'
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.8.0"
-
+    // --- ЗАЛЕЖНОСТІ (Виправлення конфліктів версій) ---
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0"
     implementation "androidx.work:work-runtime:2.8.1"
-
     implementation "com.squareup.okhttp3:okhttp:4.10.0"
+    // --------------------------------------------------
 
 **DEPS**}
 
 android {
-    namespace "com.unity3d.player"
+    namespace "com.Bowlof.LightChecker"
+
     ndkPath "**NDKPATH**"
     ndkVersion "**NDKVERSION**"
 
@@ -25,6 +26,10 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
     }
 
     defaultConfig {
@@ -47,8 +52,27 @@ android {
     androidResources {
         noCompress = **BUILTIN_NOCOMPRESS** + unityStreamingAssets.tokenize(', ')
         ignoreAssetsPattern = "!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~"
-    }**PACKAGING**
+    }
+
+    sourceSets {
+        main {
+            res.srcDirs += 'custom_res'
+            java.srcDirs += 'custom_src/main/java'
+        }
+    }
+**PACKAGING**
 }
+
+configurations.all {
+    resolutionStrategy {
+        eachDependency { details ->
+            if (details.requested.group == 'org.jetbrains.kotlin' && details.requested.name.startsWith('kotlin-stdlib')) {
+                details.useVersion '1.8.0'
+            }
+        }
+    }
+}
+
 **IL_CPP_BUILD_SETUP**
 **SOURCE_BUILD_SETUP**
 **EXTERNAL_SOURCES**
