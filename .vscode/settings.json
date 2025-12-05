@@ -66,5 +66,15 @@
     "explorer.fileNesting.patterns": {
         "*.sln": "*.csproj"
     },
-    "dotnet.defaultSolution": "LightChecker.slnx"
+    "dotnet.defaultSolution": "LightChecker.slnx",
+    "java.jdt.ls.java.home": "C:\\Program Files\\Unity\\Hub\\Editor\\6000.2.8f1\\Editor\\Data\\PlaybackEngines\\AndroidPlayer\\OpenJDK",
+    "java.server.launchMode": "LightWeight",
+    "java.project.referencedLibraries": [
+        "C:\\Program Files\\Unity\\Hub\\Editor\\6000.2.8f1\\Editor\\Data\\PlaybackEngines\\AndroidPlayer\\SDK\\platforms\\android-34\\android.jar"
+    ],
+    "java.project.sourcePaths": [
+        "Assets/Plugins/Android/WidgetLayer.androidlib/src/main/java"
+    ],
+    "java.errors.incompleteClasspath.severity": "ignore",
+    "kotlin.linting.debounce": 2000
 }

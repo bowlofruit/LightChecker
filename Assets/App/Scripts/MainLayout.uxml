@@ -1,0 +1,34 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Style src="MainStyles.uss" />
+
+    <ui:VisualElement name="Root" class="root-container">
+        
+        <ui:VisualElement class="card">
+            
+            <ui:VisualElement class="header-container">
+                <ui:Label text="⚡" class="header-icon" />
+                <ui:Label text="LightChecker" class="header-title" />
+            </ui:VisualElement>
+
+            <ui:Label text="Налаштування моніторингу" class="sub-title" />
+
+            <ui:VisualElement class="input-group">
+                <ui:DropdownField label="Оберіть місто" name="DropdownCity" class="custom-dropdown" />
+                <ui:DropdownField label="Ваша черга" name="DropdownQueue" class="custom-dropdown" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="button-group">
+                <ui:Button name="BtnGeo" text="📍 Знайти мене" class="btn btn-secondary" />
+                <ui:Button name="BtnSave" text="Зберегти" class="btn btn-primary" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="status-container">
+                <ui:Label name="LblStatus" text="Очікування даних..." class="status-label" />
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+        
+        <ui:Label text="v1.0 • Native Android Widget" class="footer-text" />
+        
+    </ui:VisualElement>
+</ui:UXML>

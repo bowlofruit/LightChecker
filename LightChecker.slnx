@@ -26,6 +26,7 @@
   <Project Path="Unity.VisualScripting.Flow.Editor.csproj" />
   <Project Path="Unity.2D.SpriteShape.Editor.csproj" />
   <Project Path="Unity.InputSystem.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Unity.VisualStudio.Editor.csproj" />
   <Project Path="Zenject-ReflectionBaking-Editor.csproj" />
   <Project Path="PPv2URPConverters.csproj" />
@@ -61,7 +62,6 @@
   <Project Path="Unity.InternalAPIEditorBridge.001.csproj" />
   <Project Path="UnityEditor.UI.csproj" />
   <Project Path="R3.Unity.csproj" />
-  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Unity.2D.Sprite.Editor.csproj" />
   <Project Path="NuGetForUnity.csproj" />
   <Project Path="Unity.Multiplayer.Center.Common.csproj" />
