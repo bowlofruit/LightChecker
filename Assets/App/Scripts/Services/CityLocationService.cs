@@ -1,7 +1,7 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using R3;
 using UnityEngine.Android;
+
 
 public class CityLocationService
 {
@@ -9,21 +9,22 @@ public class CityLocationService
     {
         if (!Permission.HasUserAuthorizedPermission(Permission.CoarseLocation))
         {
-            Permission.RequestUserPermission(Permission.CoarseLocation);
-
-            await UniTask.Delay(1000);
-
-            if (!Permission.HasUserAuthorizedPermission(Permission.CoarseLocation))
+            bool permissionResult = await RequestPermissionAsync(Permission.CoarseLocation);
+            if (!permissionResult)
             {
-                Debug.LogError("User denied location permission");
+                Debug.LogError("[CityLocationService] User denied permission");
                 return null;
             }
         }
 
-        if (!Input.location.isEnabledByUser) return null;
-        Input.location.Start(500, 500);
+        if (!Input.location.isEnabledByUser)
+        {
+            Debug.LogWarning("[CityLocationService] Location disabled by user settings");
+            return null;
+        }
 
-        Input.location.Start();
+        // 3. Запускаємо сервіс
+        Input.location.Start(500, 500);
 
         int maxWait = 20;
         while (Input.location.status == LocationServiceStatus.Initializing && maxWait > 0)
@@ -32,14 +33,20 @@ public class CityLocationService
             maxWait--;
         }
 
-        if (Input.location.status == LocationServiceStatus.Failed) return null;
+        if (Input.location.status == LocationServiceStatus.Failed || maxWait <= 0)
+        {
+            Input.location.Stop();
+            return null;
+        }
 
         float lat = Input.location.lastData.latitude;
         float lon = Input.location.lastData.longitude;
         Input.location.Stop();
 
+        Debug.Log($"[CityLocationService] Location: {lat}, {lon}");
+
         City? nearestCity = null;
-        float minDistance = 50f;
+        float minDistance = 100f;
 
         foreach (var cityEnum in System.Enum.GetValues(typeof(City)))
         {
@@ -47,6 +54,7 @@ public class CityLocationService
             if (config == null) continue;
 
             float dist = Vector2.Distance(new Vector2(lat, lon), config.coordinates);
+
             if (dist < minDistance)
             {
                 minDistance = dist;
@@ -55,5 +63,19 @@ public class CityLocationService
         }
 
         return nearestCity;
+    }
+
+    private UniTask<bool> RequestPermissionAsync(string permission)
+    {
+        var tcs = new UniTaskCompletionSource<bool>();
+        var callbacks = new PermissionCallbacks();
+
+        callbacks.PermissionGranted += (p) => { tcs.TrySetResult(true); };
+
+        callbacks.PermissionDenied += (p) => { tcs.TrySetResult(false); };
+
+        Permission.RequestUserPermission(permission, callbacks);
+
+        return tcs.Task;
     }
 }
