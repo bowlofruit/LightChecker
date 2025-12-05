@@ -1,5 +1,18 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
-    <ui:Style src="MainStyles.uss" />
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML 
+    xmlns:ui="UnityEngine.UIElements" 
+    xmlns:uie="UnityEditor.UIElements" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    engine="UnityEngine.UIElements" 
+    editor="UnityEditor.UIElements" 
+    noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" 
+    editor-extension-mode="False">
+
+    <!-- Підключаємо всі наші файли стилів -->
+    <ui:Style src="Variables.uss" />
+    <ui:Style src="General.uss" />
+    <ui:Style src="Buttons.uss" />
+    <ui:Style src="DropdownOverrides.uss" />
 
     <ui:VisualElement name="Root" class="root-container">
         
@@ -31,4 +44,5 @@
         <ui:Label text="v1.0 • Native Android Widget" class="footer-text" />
         
     </ui:VisualElement>
+
 </ui:UXML>

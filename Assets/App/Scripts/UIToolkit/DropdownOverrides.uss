@@ -1,0 +1,63 @@
+/* --- ПОЛЯ ВВОДУ (DROPDOWN INPUT) --- */
+
+/* 1. Головний контейнер поля */
+.custom-dropdown {
+    /* ГОЛОВНИЙ ФІКС: Робимо вертикальний стовпчик */
+    flex-direction: column !important; 
+    align-items: stretch !important;
+    
+    margin-bottom: 15px;
+    width: 100%;
+    height: auto;
+}
+
+/* 2. Текст "Оберіть місто" */
+.custom-dropdown > .unity-base-field__label {
+    color: var(--color-text-sub);
+    font-size: 12px;
+    
+    /* Відступи */
+    margin-bottom: 8px !important;
+    margin-right: 0 !important;
+    padding: 0 !important;
+    
+    /* Розтягуємо на всю ширину */
+    width: 100%;
+    min-width: 100%;
+    
+    /* Вирівнювання тексту */
+    -unity-text-align: middle-left;
+}
+
+/* 3. Сама плашка (Input), де написано місто */
+.custom-dropdown > .unity-base-field__input {
+    background-color: #252525;
+    border-color: #444;
+    border-radius: 10px;
+    padding: 12px 10px;
+    color: white;
+    font-size: 15px;
+    border-width: 1px;
+    
+    /* ФІКС ШИРИНИ: Розтягуємо на 100% */
+    width: 100%;
+    flex-grow: 1;
+    flex-shrink: 0;
+    
+    margin: 0 !important;
+}
+
+/* Текст вибраного значення */
+.unity-base-popup-field__text {
+    color: var(--color-text-main);
+    margin-left: 2px;
+    padding: 0;
+}
+
+/* Стрілочка */
+.unity-base-popup-field__arrow {
+    -unity-background-image-tint-color: var(--color-text-sub);
+    width: 12px;
+    height: 12px;
+    margin-right: 2px;
+}

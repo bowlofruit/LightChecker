@@ -7,14 +7,17 @@ public class AppInstaller : MonoInstaller
 
     public override void InstallBindings()
     {
-        // 1. Біндимо базу даних
         Container.BindInstance(database).AsSingle();
 
-        // 2. Біндимо сервіси
-        Container.Bind<IWidgetService>().To<AndroidWidgetService>().AsSingle();
-        Container.Bind<CityLocationService>().AsSingle();
+        Container.Bind<NativeBridge>()
+            .FromNewComponentOnNewGameObject()
+            .WithGameObjectName("NativeBridge_Service")
+            .AsSingle();
 
-        // 3. Біндимо ViewModel
+        Container.Bind<IWidgetService>().To<AndroidWidgetService>().AsSingle();
+
+        Container.Bind<CityLocationService>().AsSingle();
+        Container.Bind<TelegramParserService>().AsSingle();
         Container.Bind<AppViewModel>().AsSingle();
     }
 }

@@ -3,6 +3,7 @@ using UnityEngine.UIElements;
 using Zenject;
 using R3;
 
+[RequireComponent(typeof(UIDocument))]
 public class MainView : MonoBehaviour
 {
     private AppViewModel _viewModel;
@@ -49,7 +50,6 @@ public class MainView : MonoBehaviour
                 _cityDropdown.index = 0;
         }).AddTo(this);
 
-        // 2. Список черг
         _viewModel.AvailableQueues.Subscribe(queues =>
         {
             _queueDropdown.choices = queues;
