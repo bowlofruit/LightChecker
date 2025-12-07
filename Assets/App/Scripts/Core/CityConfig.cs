@@ -22,16 +22,11 @@ public class CityConfig
     [Tooltip("Шаблон Regex для Android. {0} буде замінено на вибрану чергу. Приклад: ^{0}\\s+(.*)")]
     public string scheduleRegexTemplate;
 
+    [Header("Date Parsing (Advanced)")]
+    [Tooltip("Регулярка для пошуку дат у тексті. Має знаходити: '05.12', '5 грудня', 'завтра'.")]
+    [TextArea(2, 5)]
+    public string dateDetectionRegex = @"(?i)(\d{1,2}[./]\d{2})|(\d{1,2}\s+(січня|лютого|березня|квітня|травня|червня|липня|серпня|вересня|жовтня|листопада|грудня))|(завтра)|(сьогодні)";
+
     [Header("Geo Location")]
     public Vector2 coordinates;
-
-    /// <summary>
-    /// Генерує фінальний Regex для Android (виправляє помилку в AppController)
-    /// </summary>
-    public string GetFinalRegex(string userQueue)
-    {
-        string safeQueue = Regex.Escape(userQueue);
-
-        return string.Format(scheduleRegexTemplate, safeQueue);
-    }
 }

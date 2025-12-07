@@ -1,4 +1,4 @@
 public interface IWidgetService
 {
-    void UpdateWidget(string url, string regex, int interval);
+    void UpdateWidget(string url, string scheduleRegex, string dateRegex, int interval);
 }

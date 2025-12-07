@@ -1,43 +1,45 @@
-using Cysharp.Threading.Tasks; // UniTask (або використовуй Coroutines/Task)
-using UnityEngine;
-using UnityEngine.Networking;
+using Cysharp.Threading.Tasks;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Linq;
+using UnityEngine;
+using R3;
 
 public class TelegramParserService
 {
+    private readonly NativeBridge _nativeBridge;
+
+    public TelegramParserService(NativeBridge nativeBridge)
+    {
+        _nativeBridge = nativeBridge;
+    }
+
     public async UniTask<List<string>> GetAvailableQueues(string url, string regexPattern)
     {
-        using var request = UnityWebRequest.Get(url);
-        await request.SendWebRequest();
+        var tcs = new UniTaskCompletionSource<List<string>>();
 
-        if (request.result != UnityWebRequest.Result.Success)
+        using var sub1 = _nativeBridge.OnQueuesReceived.Take(1).Subscribe(queues =>
         {
-            Debug.LogError($"[TelegramParser] Network Error: {request.error}");
+            tcs.TrySetResult(queues.ToList());
+        });
+
+        using var sub2 = _nativeBridge.OnQueuesError.Take(1).Subscribe(error =>
+        {
+            Debug.LogError($"[Parser] OCR Error: {error}");
+            tcs.TrySetResult(new List<string>());
+        });
+
+        _nativeBridge.FetchQueues(url, regexPattern);
+
+        var (isCanceled, result) = await tcs.Task
+            .Timeout(System.TimeSpan.FromSeconds(15))
+            .SuppressCancellationThrow();
+
+        if (isCanceled)
+        {
+            Debug.LogError("[Parser] Operation timed out (Android did not respond in 15s).");
             return new List<string>();
         }
 
-        string rawHtml = request.downloadHandler.text;
-
-        string cleanText = Regex.Replace(rawHtml, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
-        cleanText = Regex.Replace(cleanText, "<.*?>", string.Empty);
-        cleanText = System.Net.WebUtility.HtmlDecode(cleanText);
-
-        var foundQueues = new HashSet<string>();
-        
-        var regex = new Regex(regexPattern);
-        var matches = regex.Matches(cleanText);
-
-        foreach (Match match in matches)
-        {
-            if (match.Success && match.Groups.Count > 1)
-            {
-                string queueName = match.Groups[1].Value.Trim();
-                foundQueues.Add(queueName);
-            }
-        }
-
-        return foundQueues.OrderBy(q => q).ToList();
+        return result;
     }
 }

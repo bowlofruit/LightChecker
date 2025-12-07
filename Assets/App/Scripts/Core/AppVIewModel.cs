@@ -110,7 +110,7 @@ public class AppViewModel
         string queue = AvailableQueues.Value[SelectedQueueIndex.Value];
         string finalRegex = string.Format(config.scheduleRegexTemplate, System.Text.RegularExpressions.Regex.Escape(queue));
 
-        _widgetService.UpdateWidget(config.telegramUrl, finalRegex, 15);
+        _widgetService.UpdateWidget(config.telegramUrl, finalRegex, config.dateDetectionRegex, 15);
 
         if (!PlayerPrefs.HasKey("WidgetPinnedPrompt"))
         {

@@ -23,7 +23,6 @@ public class CityLocationService
             return null;
         }
 
-        // 3. Запускаємо сервіс
         Input.location.Start(500, 500);
 
         int maxWait = 20;
