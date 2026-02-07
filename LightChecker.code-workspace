@@ -1,0 +1,38 @@
+{
+	"folders": [
+		{
+			"name": "🔴 UNITY (UI & Logic)",
+			"path": "LightCheckerUnity"
+		},
+		{
+			"name": "🟢 ANDROID NATIVE (Plugin)",
+			"path": "LightCheckerAndroid"
+		}
+	],
+	"settings": {
+		"dotnet.defaultSolution": "LightCheckerUnity/*.sln",
+		"java.jdt.ls.java.home": "C:\\Program Files\\Unity\\Hub\\Editor\\6000.3.4f1\\Editor\\Data\\PlaybackEngines\\AndroidPlayer\\OpenJDK",
+		"java.server.launchMode": "LightWeight",
+		"java.configuration.updateBuildConfiguration": "automatic",
+		"java.errors.incompleteClasspath.severity": "ignore",
+		"kotlin.linting.debounce": 2000,
+		"kotlin.languageServer.enabled": true,
+
+		"files.exclude": {
+			"**/.git": true,
+			"**/.DS_Store": true,
+			"**/*.meta": true,
+			"**/Library": true,
+			"**/Temp": true,
+			"**/obj": true,
+			"**/Build": true,
+			"**/build": true,
+			"**/.gradle": true,
+			"**/.idea": true
+		},
+		"search.exclude": {
+			"**/Library": true,
+			"**/build": true
+		}
+	}
+}
