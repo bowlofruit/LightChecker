@@ -1,0 +1,32 @@
+{
+  "catalogVersion": 1,
+  "cities": [
+    {
+      "cityId": "kyiv",
+      "displayName": "Київ",
+      "queues": [
+        {
+          "queueId": "1A",
+          "displayName": "Черга 1.1",
+          "regionId": "kyiv"
+        },
+        {
+          "queueId": "2.1",
+          "displayName": "Черга 2.1",
+          "regionId": "kyiv"
+        }
+      ]
+    },
+    {
+      "cityId": "lviv",
+      "displayName": "Львів",
+      "queues": [
+        {
+          "queueId": "1.1",
+          "displayName": "Черга 1.1",
+          "regionId": "lviv"
+        }
+      ]
+    }
+  ]
+}

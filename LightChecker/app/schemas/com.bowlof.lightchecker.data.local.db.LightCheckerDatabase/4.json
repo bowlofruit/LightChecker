@@ -1,0 +1,204 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "3763498370d184379b588590d54866ca",
+    "entities": [
+      {
+        "tableName": "saved_locations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `region_id` TEXT NOT NULL, `queue_id` TEXT NOT NULL, `city_id` TEXT NOT NULL, `city_display_name` TEXT NOT NULL, `queue_display_name` TEXT NOT NULL, `sort_order` INTEGER NOT NULL, `is_widget_primary` INTEGER NOT NULL, `latitude` REAL, `longitude` REAL, `location_source` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "regionId",
+            "columnName": "region_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "queueId",
+            "columnName": "queue_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cityId",
+            "columnName": "city_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cityDisplayName",
+            "columnName": "city_display_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "queueDisplayName",
+            "columnName": "queue_display_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sortOrder",
+            "columnName": "sort_order",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isWidgetPrimary",
+            "columnName": "is_widget_primary",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "latitude",
+            "columnName": "latitude",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "longitude",
+            "columnName": "longitude",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "locationSource",
+            "columnName": "location_source",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "sync_meta",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`region_id` TEXT NOT NULL, `queue_id` TEXT NOT NULL, `effective_date_yyyymmdd` INTEGER NOT NULL, `cached_version` INTEGER NOT NULL, `last_sync_success_at` INTEGER, PRIMARY KEY(`region_id`, `queue_id`, `effective_date_yyyymmdd`))",
+        "fields": [
+          {
+            "fieldPath": "regionId",
+            "columnName": "region_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "queueId",
+            "columnName": "queue_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "effectiveDateYyyymmdd",
+            "columnName": "effective_date_yyyymmdd",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cachedVersion",
+            "columnName": "cached_version",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSyncSuccessAtEpochMillis",
+            "columnName": "last_sync_success_at",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "region_id",
+            "queue_id",
+            "effective_date_yyyymmdd"
+          ]
+        }
+      },
+      {
+        "tableName": "outage_slots",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`region_id` TEXT NOT NULL, `queue_id` TEXT NOT NULL, `effective_date_yyyymmdd` INTEGER NOT NULL, `slot_index` INTEGER NOT NULL, `start_minute` INTEGER NOT NULL, `end_minute` INTEGER NOT NULL, PRIMARY KEY(`region_id`, `queue_id`, `effective_date_yyyymmdd`, `slot_index`))",
+        "fields": [
+          {
+            "fieldPath": "regionId",
+            "columnName": "region_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "queueId",
+            "columnName": "queue_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "effectiveDateYyyymmdd",
+            "columnName": "effective_date_yyyymmdd",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "slotIndex",
+            "columnName": "slot_index",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startMinute",
+            "columnName": "start_minute",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endMinute",
+            "columnName": "end_minute",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "region_id",
+            "queue_id",
+            "effective_date_yyyymmdd",
+            "slot_index"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_outage_slots_region_id_queue_id_effective_date_yyyymmdd",
+            "unique": false,
+            "columnNames": [
+              "region_id",
+              "queue_id",
+              "effective_date_yyyymmdd"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_outage_slots_region_id_queue_id_effective_date_yyyymmdd` ON `${TABLE_NAME}` (`region_id`, `queue_id`, `effective_date_yyyymmdd`)"
+          },
+          {
+            "name": "index_outage_slots_effective_date_yyyymmdd",
+            "unique": false,
+            "columnNames": [
+              "effective_date_yyyymmdd"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_outage_slots_effective_date_yyyymmdd` ON `${TABLE_NAME}` (`effective_date_yyyymmdd`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3763498370d184379b588590d54866ca')"
+    ]
+  }
+}

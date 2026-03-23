@@ -1,0 +1,28 @@
+name: LightChecker Functions
+
+on:
+  push:
+    paths:
+      - "LightChecker/functions/**"
+      - ".github/workflows/functions-ci.yml"
+  pull_request:
+    paths:
+      - "LightChecker/functions/**"
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: LightChecker/functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: LightChecker/functions/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npm run lint
+      - run: npm test

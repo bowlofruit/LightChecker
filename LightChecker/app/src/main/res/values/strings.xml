@@ -1,3 +1,42 @@
 <resources>
     <string name="app_name">LightChecker</string>
+
+    <string name="schedule_title">Графік</string>
+    <string name="schedule_refresh">Оновити</string>
+    <string name="schedule_empty_day">Для обраного дня даних ще немає. Спробуйте оновити пізніше.</string>
+    <string name="schedule_no_outages">Відключень на цей день немає.</string>
+    <string name="schedule_today">Сьогодні</string>
+    <string name="schedule_tomorrow">Завтра</string>
+    <string name="schedule_pull_refresh">Потягніть для оновлення</string>
+    <string name="schedule_tab_place_cd">Графік: %1$s, черга %2$s</string>
+    <string name="schedule_day_segment_cd">День графіка: %1$s</string>
+
+    <string name="onboarding_title">Додайте місце</string>
+    <string name="onboarding_subtitle">Оберіть місто та чергу графіка відключень.</string>
+    <string name="onboarding_city">Місто</string>
+    <string name="onboarding_queue">Черга</string>
+    <string name="onboarding_save">Зберегти й відкрити графік</string>
+    <string name="onboarding_use_location">Визначити місто за місцезнаходженням</string>
+    <string name="onboarding_catalog_error">Не вдалося завантажити довідник міст.</string>
+    <string name="onboarding_pick_city_queue">Оберіть місто та чергу.</string>
+
+    <string name="settings_title">Налаштування</string>
+    <string name="settings_places">Збережені місця</string>
+    <string name="settings_primary_widget">Віджет</string>
+    <string name="settings_delete">Видалити</string>
+    <string name="settings_version">Версія застосунку %1$s</string>
+    <string name="settings_add_place_hint">Додайте місце через меню графіка (онбординг) — у майбутньому тут буде кнопка «Додати».</string>
+
+    <string name="nav_settings_content_desc">Налаштування</string>
+
+    <string name="err_permission_denied">Немає доступу до даних (перевірте правила Firestore).</string>
+    <string name="err_parse">Некоректні дані графіка.</string>
+    <string name="err_network">Помилка мережі.</string>
+    <string name="err_unavailable">Сервіс тимчасово недоступний.</string>
+    <string name="err_unknown_firestore">Помилка Firestore: %1$s</string>
+    <string name="err_unknown">Невідома помилка.</string>
+
+    <string name="widget_no_place">Додайте місце в застосунку</string>
+    <string name="widget_empty_day">Немає даних</string>
+    <string name="widget_tomorrow_label">завтра</string>
 </resources>

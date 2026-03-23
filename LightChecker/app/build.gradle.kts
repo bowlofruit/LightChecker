@@ -20,19 +20,54 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("boolean", "LOG_STARTUP_TIMING", "false")
+    }
+
+    signingConfigs {
+        create("release") {
+            val storePath = (project.findProperty("LIGHTCHECKER_STORE_FILE") as String?)?.trim().orEmpty()
+            if (storePath.isNotEmpty()) {
+                storeFile = file(storePath)
+                storePassword = project.findProperty("LIGHTCHECKER_STORE_PASSWORD") as String?
+                keyAlias = project.findProperty("LIGHTCHECKER_KEY_ALIAS") as String?
+                keyPassword = project.findProperty("LIGHTCHECKER_KEY_PASSWORD") as String?
+            }
+        }
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
     }
 
     buildTypes {
+        debug {
+            buildConfigField("boolean", "LOG_STARTUP_TIMING", "true")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            val releaseCfg = signingConfigs.getByName("release")
+            if (releaseCfg.storeFile?.exists() == true) {
+                signingConfig = releaseCfg
+            }
         }
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+    ksp {
+        arg("room.schemaLocation", "$projectDir/schemas")
     }
 }
 
@@ -67,7 +102,20 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation("androidx.compose.material:material-icons-extended")
+
+    implementation(libs.timber)
+    implementation(libs.play.services.location)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
+
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(libs.mockk)
+    testImplementation(libs.androidx.room.testing)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.robolectric)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

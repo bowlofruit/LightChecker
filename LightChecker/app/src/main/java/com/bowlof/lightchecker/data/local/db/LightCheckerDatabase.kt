@@ -4,11 +4,19 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [SyncMetadataEntity::class],
-    version = 1,
-    exportSchema = false,
+    entities = [
+        SavedLocationEntity::class,
+        SyncMetaEntity::class,
+        OutageSlotEntity::class,
+    ],
+    version = 4,
+    exportSchema = true,
 )
 abstract class LightCheckerDatabase : RoomDatabase() {
 
-    abstract fun syncMetadataDao(): SyncMetadataDao
+    abstract fun savedLocationDao(): SavedLocationDao
+
+    abstract fun syncMetaDao(): SyncMetaDao
+
+    abstract fun outageSlotDao(): OutageSlotDao
 }

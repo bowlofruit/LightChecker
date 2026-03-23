@@ -19,3 +19,8 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Firebase / WorkManager / Glance (на майбутнє при minifyEnabled true)
+-keep class com.google.firebase.** { *; }
+-keep class androidx.work.** { *; }
+-keep class androidx.glance.** { *; }

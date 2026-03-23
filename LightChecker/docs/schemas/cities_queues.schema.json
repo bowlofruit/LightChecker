@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lightchecker.local/schemas/cities_queues.schema.json",
+  "title": "CitiesQueuesCatalog",
+  "type": "object",
+  "required": ["catalogVersion", "cities"],
+  "properties": {
+    "catalogVersion": { "type": "integer", "minimum": 1 },
+    "cities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["cityId", "displayName", "queues"],
+        "properties": {
+          "cityId": { "type": "string", "minLength": 1 },
+          "displayName": { "type": "string", "minLength": 1 },
+          "queues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["queueId", "displayName", "regionId"],
+              "properties": {
+                "queueId": { "type": "string", "minLength": 1 },
+                "displayName": { "type": "string", "minLength": 1 },
+                "regionId": { "type": "string", "minLength": 1 }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

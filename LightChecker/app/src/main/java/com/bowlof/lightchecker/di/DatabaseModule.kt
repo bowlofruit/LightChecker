@@ -3,7 +3,9 @@ package com.bowlof.lightchecker.di
 import android.content.Context
 import androidx.room.Room
 import com.bowlof.lightchecker.data.local.db.LightCheckerDatabase
-import com.bowlof.lightchecker.data.local.db.SyncMetadataDao
+import com.bowlof.lightchecker.data.local.db.OutageSlotDao
+import com.bowlof.lightchecker.data.local.db.SavedLocationDao
+import com.bowlof.lightchecker.data.local.db.SyncMetaDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,11 +24,19 @@ object DatabaseModule {
             context,
             LightCheckerDatabase::class.java,
             "light_checker.db",
-        ).build()
+        ).fallbackToDestructiveMigration(dropAllTables = true)
+            .build()
     }
 
     @Provides
-    fun provideSyncMetadataDao(database: LightCheckerDatabase): SyncMetadataDao {
-        return database.syncMetadataDao()
-    }
+    fun provideSavedLocationDao(database: LightCheckerDatabase): SavedLocationDao =
+        database.savedLocationDao()
+
+    @Provides
+    fun provideSyncMetaDao(database: LightCheckerDatabase): SyncMetaDao =
+        database.syncMetaDao()
+
+    @Provides
+    fun provideOutageSlotDao(database: LightCheckerDatabase): OutageSlotDao =
+        database.outageSlotDao()
 }
