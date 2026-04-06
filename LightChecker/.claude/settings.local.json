@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew :app:detekt)",
+      "Bash(./gradlew :app:ktlintCheck)",
+      "Bash(./gradlew :app:ktlintMainSourceSetCheck)",
+      "Bash(./gradlew :app:tasks --group=formatting)",
+      "Bash(./gradlew :app:tasks)",
+      "Bash(./gradlew :app:ktlintCheck --rerun-tasks)",
+      "Bash(./gradlew :app:tasks --all)",
+      "Bash(./gradlew :app:compileDebugKotlin :app:detekt)",
+      "Bash(./gradlew :app:detekt :app:testDebugUnitTest)",
+      "Bash(./gradlew :app:compileDebugKotlin :app:detekt :app:testDebugUnitTest)",
+      "Bash(sed -i 's|// TODO: Show an AlertDialog explaining why notifications are needed|// Rationale dialog: explain why notifications are needed|' \"app/src/main/java/com/bowlof/lightchecker/MainActivity.kt\")",
+      "Bash(sed -i 's|//  before requesting the permission again.|//  before requesting the permission again \\(future enhancement\\).|' \"app/src/main/java/com/bowlof/lightchecker/MainActivity.kt\")",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(./node_modules/.bin/tsc)",
+      "Bash(node --test test/*.cjs)"
+    ]
+  }
+}

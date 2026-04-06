@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/DEV-BOWLOF/Downloads/Diploma/**)",
+      "Read(//e:/Unity/LightChecker/LightChecker/app/src/main/java/com/bowlof/lightchecker/**)",
+      "Bash(curl -sL \"https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip\" -o inter.zip)",
+      "Bash(unzip -o inter.zip \"Inter-4.1/extras/ttf/Inter-Regular.ttf\" \"Inter-4.1/extras/ttf/Inter-Medium.ttf\" \"Inter-4.1/extras/ttf/Inter-SemiBold.ttf\" -d .)",
+      "Bash(mv \"Inter-4.1/extras/ttf/Inter-Regular.ttf\" inter_regular.ttf)",
+      "Bash(mv \"Inter-4.1/extras/ttf/Inter-Medium.ttf\" inter_medium.ttf)",
+      "Bash(mv \"Inter-4.1/extras/ttf/Inter-SemiBold.ttf\" inter_semibold.ttf)",
+      "Bash(rm -rf inter.zip Inter-4.1)",
+      "Bash(unzip -l inter.zip)",
+      "Bash(unzip -o inter.zip \"extras/ttf/Inter-Regular.ttf\" \"extras/ttf/Inter-Medium.ttf\" \"extras/ttf/Inter-SemiBold.ttf\" -d .)",
+      "Bash(mv \"extras/ttf/Inter-Regular.ttf\" inter_regular.ttf)",
+      "Bash(mv \"extras/ttf/Inter-Medium.ttf\" inter_medium.ttf)",
+      "Bash(mv \"extras/ttf/Inter-SemiBold.ttf\" inter_semibold.ttf)",
+      "Bash(rm -rf inter.zip extras)",
+      "Bash(./gradlew :app:compileDebugKotlin)",
+      "Bash(./gradlew :app:testDebugUnitTest)"
+    ]
+  }
+}
