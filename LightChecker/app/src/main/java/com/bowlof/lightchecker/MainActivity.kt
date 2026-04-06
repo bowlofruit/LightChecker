@@ -15,8 +15,10 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.bowlof.lightchecker.presentation.navigation.LightCheckerNavHost
 import com.bowlof.lightchecker.ui.theme.LightCheckerTheme
+import com.bowlof.lightchecker.work.SyncScheduleWorker
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
 import android.os.SystemClock
@@ -24,13 +26,21 @@ import android.os.SystemClock
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val deepLinkRegion = intent?.getStringExtra(EXTRA_NOTIFICATION_REGION)
+        val deepLinkQueue = intent?.getStringExtra(EXTRA_NOTIFICATION_QUEUE)
+
         setContent {
             LightCheckerTheme {
                 NotificationPermissionRequestEffect()
                 ReportFullyDrawnAfterFirstFrameEffect()
-                LightCheckerNavHost(modifier = Modifier.fillMaxSize())
+                LightCheckerNavHost(
+                    modifier = Modifier.fillMaxSize(),
+                    deepLinkRegionId = deepLinkRegion,
+                    deepLinkQueueId = deepLinkQueue,
+                )
             }
         }
     }
@@ -40,9 +50,12 @@ class MainActivity : ComponentActivity() {
 private fun NotificationPermissionRequestEffect() {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
     val context = LocalContext.current
+    val activity = context as? ComponentActivity
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
-    ) { /* optional: track result */ }
+    ) { granted ->
+        Timber.d("POST_NOTIFICATIONS permission result: granted=%b", granted)
+    }
 
     LaunchedEffect(Unit) {
         val granted = ContextCompat.checkSelfPermission(
@@ -50,6 +63,14 @@ private fun NotificationPermissionRequestEffect() {
             Manifest.permission.POST_NOTIFICATIONS,
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
         if (!granted) {
+            val shouldShowRationale = activity?.shouldShowRequestPermissionRationale(
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) ?: false
+            if (shouldShowRationale) {
+                Timber.d("Notification permission rationale should be shown")
+                // Rationale dialog: explain why notifications are needed
+                //  before requesting the permission again (future enhancement).
+            }
             launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
@@ -70,3 +91,6 @@ private fun ReportFullyDrawnAfterFirstFrameEffect() {
         (context as? ComponentActivity)?.reportFullyDrawn()
     }
 }
+
+private const val EXTRA_NOTIFICATION_REGION = SyncScheduleWorker.EXTRA_REGION
+private const val EXTRA_NOTIFICATION_QUEUE = SyncScheduleWorker.EXTRA_QUEUE

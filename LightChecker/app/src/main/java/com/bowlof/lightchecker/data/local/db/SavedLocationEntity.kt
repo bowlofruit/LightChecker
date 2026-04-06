@@ -17,4 +17,5 @@ data class SavedLocationEntity(
     val latitude: Double?,
     val longitude: Double?,
     @ColumnInfo(name = "location_source") val locationSource: String?,
+    @ColumnInfo(name = "notifications_enabled", defaultValue = "1") val notificationsEnabled: Boolean = true,
 )

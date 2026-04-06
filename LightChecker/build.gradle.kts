@@ -5,4 +5,6 @@ plugins {
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.devtools.ksp) apply false
     alias(libs.plugins.google.dagger.hilt.android) apply false
+    alias(libs.plugins.detekt) apply false
+    alias(libs.plugins.firebase.crashlytics.plugin) apply false
 }

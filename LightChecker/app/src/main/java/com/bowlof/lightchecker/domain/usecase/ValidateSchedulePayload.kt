@@ -9,7 +9,7 @@ object ValidateSchedulePayload {
 
     fun validate(
         schemaVersion: Int,
-        version: Long,
+        @Suppress("unused") version: Long,
         dayYyyymmdd: Long,
         slotMinutes: List<Int>,
     ): Result<Unit> {

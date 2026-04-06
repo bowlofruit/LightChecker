@@ -1,26 +1,31 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   https://developer.android.com/studio/build/shrink-code
+# LightChecker ProGuard Rules
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Keep line numbers for crash reports (Crashlytics)
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
-
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
-
-# Firebase / WorkManager / Glance (на майбутнє при minifyEnabled true)
+# Firebase
 -keep class com.google.firebase.** { *; }
--keep class androidx.work.** { *; }
+-dontwarn com.google.firebase.**
+
+# Room - keep entity classes
+-keep class com.bowlof.lightchecker.data.local.db.** { *; }
+
+# Hilt
+-dontwarn dagger.hilt.**
+
+# WorkManager
+-keep class com.bowlof.lightchecker.work.** { *; }
+
+# Glance widget
+-keep class com.bowlof.lightchecker.widget.** { *; }
 -keep class androidx.glance.** { *; }
+
+# Firestore DTOs
+-keep class com.bowlof.lightchecker.data.remote.dto.** { *; }
+
+# Keep enum values (LocationSource, SelectedScheduleDay)
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}

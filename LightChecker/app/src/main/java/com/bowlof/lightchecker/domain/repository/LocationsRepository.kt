@@ -26,4 +26,8 @@ interface LocationsRepository {
     suspend fun deletePlace(id: Long)
 
     suspend fun setWidgetPrimary(id: Long)
+
+    suspend fun setNotificationsEnabled(id: Long, enabled: Boolean)
+
+    suspend fun swapSortOrder(idA: Long, idB: Long)
 }

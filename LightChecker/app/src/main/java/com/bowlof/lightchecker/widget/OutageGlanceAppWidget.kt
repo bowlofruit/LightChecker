@@ -4,12 +4,15 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.action.actionStartActivity
+import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.provideContent
 import androidx.compose.ui.unit.dp
 import androidx.glance.layout.Column
 import androidx.glance.layout.padding
 import androidx.glance.text.Text
+import com.bowlof.lightchecker.MainActivity
 import com.bowlof.lightchecker.R
 import com.bowlof.lightchecker.di.GlanceWidgetEntryPoint
 import com.bowlof.lightchecker.domain.model.OutageInterval
@@ -77,7 +80,11 @@ class OutageGlanceAppWidget : GlanceAppWidget() {
 
 @Composable
 private fun WidgetContent(lines: List<String>) {
-    Column(modifier = GlanceModifier.padding(8.dp)) {
+    Column(
+        modifier = GlanceModifier
+            .padding(8.dp)
+            .clickable(actionStartActivity<MainActivity>()),
+    ) {
         lines.forEach { line ->
             Text(text = line, modifier = GlanceModifier.padding(bottom = 4.dp))
         }

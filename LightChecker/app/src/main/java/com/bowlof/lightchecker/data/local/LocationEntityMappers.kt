@@ -17,5 +17,6 @@ internal fun SavedLocationEntity.toDomain(): SavedPlace {
         latitude = latitude,
         longitude = longitude,
         locationSource = locationSource?.let { runCatching { LocationSource.valueOf(it) }.getOrNull() },
+        notificationsEnabled = notificationsEnabled,
     )
 }

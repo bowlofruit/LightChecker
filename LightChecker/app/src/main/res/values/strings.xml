@@ -8,6 +8,11 @@
     <string name="schedule_today">Сьогодні</string>
     <string name="schedule_tomorrow">Завтра</string>
     <string name="schedule_pull_refresh">Потягніть для оновлення</string>
+    <string name="schedule_last_sync">Оновлено: %1$s</string>
+    <string name="schedule_currently_off">Зараз відключення, до %1$s</string>
+    <string name="schedule_next_off_hours">Відключення через %1$d год %2$d хв</string>
+    <string name="schedule_next_off_minutes">Відключення через %1$d хв</string>
+    <string name="schedule_all_done">Відключень більше немає</string>
     <string name="schedule_tab_place_cd">Графік: %1$s, черга %2$s</string>
     <string name="schedule_day_segment_cd">День графіка: %1$s</string>
 
@@ -24,10 +29,29 @@
     <string name="settings_places">Збережені місця</string>
     <string name="settings_primary_widget">Віджет</string>
     <string name="settings_delete">Видалити</string>
+    <string name="settings_notifications_on">Вимкнути сповіщення</string>
+    <string name="settings_notifications_off">Увімкнути сповіщення</string>
+    <string name="settings_move_up">Перемістити вгору</string>
+    <string name="settings_move_down">Перемістити вниз</string>
+    <string name="settings_history">Історія оновлень</string>
+
+    <string name="history_title">Історія оновлень</string>
+    <string name="history_empty">Історія оновлень порожня</string>
+    <string name="history_version">v%1$d → v%2$d</string>
+    <string name="history_version_first">v%1$d (перша)</string>
     <string name="settings_version">Версія застосунку %1$s</string>
-    <string name="settings_add_place_hint">Додайте місце через меню графіка (онбординг) — у майбутньому тут буде кнопка «Додати».</string>
+    <string name="settings_add_place">Додати місце</string>
+    <string name="settings_delete_confirm_title">Видалити місце?</string>
+    <string name="settings_delete_confirm_body">%1$s — %2$s</string>
+    <string name="settings_delete_confirm_yes">Видалити</string>
+    <string name="settings_delete_confirm_no">Скасувати</string>
+
+    <string name="about_title">Про додаток</string>
+    <string name="about_description">LightChecker — додаток для моніторингу графіків планових відключень електроенергії в Україні.</string>
+    <string name="settings_about">Про додаток</string>
 
     <string name="nav_settings_content_desc">Налаштування</string>
+    <string name="nav_back_content_desc">Назад</string>
 
     <string name="err_permission_denied">Немає доступу до даних (перевірте правила Firestore).</string>
     <string name="err_parse">Некоректні дані графіка.</string>
@@ -35,6 +59,10 @@
     <string name="err_unavailable">Сервіс тимчасово недоступний.</string>
     <string name="err_unknown_firestore">Помилка Firestore: %1$s</string>
     <string name="err_unknown">Невідома помилка.</string>
+
+    <string name="notification_channel_name">Оновлення графіка</string>
+    <string name="notification_channel_description">Сповіщення про зміни графіка відключень</string>
+    <string name="notification_schedule_updated">Розклад оновлено для %1$s</string>
 
     <string name="widget_no_place">Додайте місце в застосунку</string>
     <string name="widget_empty_day">Немає даних</string>

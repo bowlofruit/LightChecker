@@ -5,4 +5,5 @@ data class DaySchedule(
     val effectiveDateYyyymmdd: Long,
     val cachedVersion: Long?,
     val intervals: List<OutageInterval>,
+    val lastSyncAtEpochMillis: Long? = null,
 )

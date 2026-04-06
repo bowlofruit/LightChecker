@@ -1,0 +1,70 @@
+<resources>
+    <string name="app_name">LightChecker</string>
+
+    <string name="schedule_title">Schedule</string>
+    <string name="schedule_refresh">Refresh</string>
+    <string name="schedule_empty_day">No data for selected day. Try refreshing later.</string>
+    <string name="schedule_no_outages">No outages for this day.</string>
+    <string name="schedule_today">Today</string>
+    <string name="schedule_tomorrow">Tomorrow</string>
+    <string name="schedule_pull_refresh">Pull to refresh</string>
+    <string name="schedule_last_sync">Updated: %1$s</string>
+    <string name="schedule_currently_off">Outage in progress, until %1$s</string>
+    <string name="schedule_next_off_hours">Outage in %1$d hr %2$d min</string>
+    <string name="schedule_next_off_minutes">Outage in %1$d min</string>
+    <string name="schedule_all_done">No more outages</string>
+    <string name="schedule_tab_place_cd">Schedule: %1$s, queue %2$s</string>
+    <string name="schedule_day_segment_cd">Schedule day: %1$s</string>
+
+    <string name="onboarding_title">Add place</string>
+    <string name="onboarding_subtitle">Select a city and outage schedule queue.</string>
+    <string name="onboarding_city">City</string>
+    <string name="onboarding_queue">Queue</string>
+    <string name="onboarding_save">Save and open schedule</string>
+    <string name="onboarding_use_location">Detect city by location</string>
+    <string name="onboarding_catalog_error">Failed to load city catalog.</string>
+    <string name="onboarding_pick_city_queue">Select a city and queue.</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_places">Saved places</string>
+    <string name="settings_primary_widget">Widget</string>
+    <string name="settings_delete">Delete</string>
+    <string name="settings_notifications_on">Disable notifications</string>
+    <string name="settings_notifications_off">Enable notifications</string>
+    <string name="settings_move_up">Move up</string>
+    <string name="settings_move_down">Move down</string>
+    <string name="settings_history">Update history</string>
+
+    <string name="history_title">Update history</string>
+    <string name="history_empty">Update history is empty</string>
+    <string name="history_version">v%1$d → v%2$d</string>
+    <string name="history_version_first">v%1$d (first)</string>
+    <string name="settings_version">App version %1$s</string>
+    <string name="settings_add_place">Add place</string>
+    <string name="settings_delete_confirm_title">Delete place?</string>
+    <string name="settings_delete_confirm_body">%1$s — %2$s</string>
+    <string name="settings_delete_confirm_yes">Delete</string>
+    <string name="settings_delete_confirm_no">Cancel</string>
+
+    <string name="about_title">About</string>
+    <string name="about_description">LightChecker is an app for monitoring scheduled power outages in Ukraine.</string>
+    <string name="settings_about">About</string>
+
+    <string name="nav_settings_content_desc">Settings</string>
+    <string name="nav_back_content_desc">Back</string>
+
+    <string name="err_permission_denied">No access to data (check Firestore rules).</string>
+    <string name="err_parse">Invalid schedule data.</string>
+    <string name="err_network">Network error.</string>
+    <string name="err_unavailable">Service temporarily unavailable.</string>
+    <string name="err_unknown_firestore">Firestore error: %1$s</string>
+    <string name="err_unknown">Unknown error.</string>
+
+    <string name="notification_channel_name">Schedule updates</string>
+    <string name="notification_channel_description">Notifications about outage schedule changes</string>
+    <string name="notification_schedule_updated">Schedule updated for %1$s</string>
+
+    <string name="widget_no_place">Add a place in the app</string>
+    <string name="widget_empty_day">No data</string>
+    <string name="widget_tomorrow_label">tomorrow</string>
+</resources>

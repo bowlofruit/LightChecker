@@ -1,5 +1,6 @@
 /**
- * Cloud Functions: health, cron pipeline (oblenergo stub → Firestore → FCM), опційний HTTP-тригер.
+ * Cloud Functions: health, cron pipeline (multi-source fetch → parser registry → Firestore → FCM),
+ * optional HTTP trigger.
  */
 import { getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
@@ -7,7 +8,7 @@ import { getMessaging } from "firebase-admin/messaging";
 import * as logger from "firebase-functions/logger";
 import { onRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { fetchOblenergoStub } from "./fetchOblenergoStub";
+import { fetchSource } from "./fetchSource";
 import { kyivTodayYyyymmdd, kyivTomorrowYyyymmdd } from "./kyivDate";
 import {
   httpScheduleKey,
@@ -16,7 +17,7 @@ import {
   pipelineQueueId,
   pipelineRegionId,
 } from "./params";
-import { parseScheduleHtmlStub } from "./parseScheduleHtmlStub";
+import { getParser } from "./parsers";
 import { applyScheduleUpdate } from "./schedulePipeline";
 
 if (!getApps().length) {
@@ -48,8 +49,13 @@ export const schedulePollStub = onSchedule(
     try {
       const db = getFirestore();
       const messaging = getMessaging();
-      const html = await fetchOblenergoStub(oblenergoSourceUrl.value());
-      const pairs = parseScheduleHtmlStub(html);
+      const html = await fetchSource(oblenergoSourceUrl.value());
+      if (!html) {
+        logger.warn("fetch failed");
+        return;
+      }
+      const parser = getParser("regex");
+      const rawPairs = parser.parse(html);
       const day = effectivePipelineDayYyyymmdd();
       await applyScheduleUpdate(
         db,
@@ -57,7 +63,7 @@ export const schedulePollStub = onSchedule(
         pipelineRegionId.value(),
         pipelineQueueId.value(),
         day,
-        pairs,
+        rawPairs,
       );
     } catch (e) {
       logger.error("schedulePollStub_failed", e);
@@ -76,15 +82,20 @@ export const runSchedulePipelineHttp = onRequest(async (req, res) => {
   try {
     const db = getFirestore();
     const messaging = getMessaging();
-    const html = await fetchOblenergoStub(oblenergoSourceUrl.value());
-    const pairs = parseScheduleHtmlStub(html);
+    const html = await fetchSource(oblenergoSourceUrl.value());
+    if (!html) {
+      res.status(502).json({ ok: false, error: "fetch failed" });
+      return;
+    }
+    const parser = getParser("regex");
+    const rawPairs = parser.parse(html);
     const result = await applyScheduleUpdate(
       db,
       messaging,
       pipelineRegionId.value(),
       pipelineQueueId.value(),
       effectivePipelineDayYyyymmdd(),
-      pairs,
+      rawPairs,
     );
     res.status(200).json({ ok: true, ...result });
   } catch (e) {

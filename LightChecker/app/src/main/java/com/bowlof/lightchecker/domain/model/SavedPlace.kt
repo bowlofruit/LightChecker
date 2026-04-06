@@ -12,4 +12,5 @@ data class SavedPlace(
     val latitude: Double?,
     val longitude: Double?,
     val locationSource: LocationSource?,
+    val notificationsEnabled: Boolean = true,
 )

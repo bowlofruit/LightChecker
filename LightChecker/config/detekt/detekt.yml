@@ -1,0 +1,62 @@
+build:
+  maxIssues: 0
+
+complexity:
+  LongMethod:
+    threshold: 150
+    ignoreAnnotated: ['Composable']
+  LongParameterList:
+    functionThreshold: 10
+    constructorThreshold: 12
+    ignoreAnnotated: ['Composable']
+  TooManyFunctions:
+    thresholdInFiles: 20
+    thresholdInClasses: 20
+    thresholdInInterfaces: 15
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: false
+
+naming:
+  FunctionNaming:
+    functionPattern: '[a-zA-Z][a-zA-Z0-9]*'
+  TopLevelPropertyNaming:
+    constantPattern: '[A-Z][A-Za-z0-9_]*'
+    propertyPattern: '[A-Z][A-Za-z0-9]*|_[a-z][A-Za-z0-9]*'
+  MatchingDeclarationName:
+    active: false
+
+style:
+  WildcardImport:
+    active: false
+  MagicNumber:
+    active: false
+  ReturnCount:
+    max: 5
+  UnusedPrivateMember:
+    active: true
+    allowedNames: '(_.*|padding)'
+  DestructuringDeclarationWithTooManyEntries:
+    active: false
+  MaxLineLength:
+    maxLineLength: 140
+
+# detekt-formatting rules (ktlint-based)
+formatting:
+  ImportOrdering:
+    active: false
+  NoUnusedImports:
+    active: true
+  NoWildcardImports:
+    active: true
+  NoConsecutiveBlankLines:
+    active: true
+  FinalNewline:
+    active: true
+  ArgumentListWrapping:
+    maxLineLength: 140
+  MaximumLineLength:
+    maxLineLength: 140
+  Filename:
+    active: false

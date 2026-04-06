@@ -6,6 +6,8 @@ import androidx.room.withTransaction
 import com.bowlof.lightchecker.data.local.toDomain
 import com.bowlof.lightchecker.data.local.db.LightCheckerDatabase
 import com.bowlof.lightchecker.data.local.db.OutageSlotEntity
+import com.bowlof.lightchecker.data.local.db.SyncEventEntity
+import com.bowlof.lightchecker.data.local.db.SyncHistoryEntity
 import com.bowlof.lightchecker.data.local.db.SyncMetaEntity
 import com.bowlof.lightchecker.data.remote.FirestoreScheduleDataSource
 import com.bowlof.lightchecker.domain.ids.ScheduleDocumentIds
@@ -35,6 +37,8 @@ class ScheduleRepositoryImpl @Inject constructor(
 
     private val outageDao get() = database.outageSlotDao()
     private val syncDao get() = database.syncMetaDao()
+    private val historyDao get() = database.syncHistoryDao()
+    private val eventDao get() = database.syncEventDao()
 
     override fun observeIntervals(
         regionId: String,
@@ -59,6 +63,7 @@ class ScheduleRepositoryImpl @Inject constructor(
                 effectiveDateYyyymmdd = effectiveDateYyyymmdd,
                 cachedVersion = meta?.cachedVersion,
                 intervals = intervals,
+                lastSyncAtEpochMillis = meta?.lastSyncSuccessAtEpochMillis,
             )
         }.distinctUntilChanged()
     }
@@ -104,6 +109,8 @@ class ScheduleRepositoryImpl @Inject constructor(
             lastSyncSuccessAtEpochMillis = System.currentTimeMillis(),
         )
 
+        val oldMeta = syncDao.get(regionId, queueId, dto.d)
+
         database.withTransaction {
             outageDao.deleteForDay(regionId, queueId, dto.d)
             if (slots.isNotEmpty()) {
@@ -111,6 +118,29 @@ class ScheduleRepositoryImpl @Inject constructor(
             }
             syncDao.upsert(meta)
         }
+
+        historyDao.insert(
+            SyncHistoryEntity(
+                regionId = regionId,
+                queueId = queueId,
+                dateYyyymmdd = dto.d,
+                oldVersion = oldMeta?.cachedVersion,
+                newVersion = dto.v,
+                syncedAtEpochMillis = System.currentTimeMillis(),
+            ),
+        )
+        historyDao.pruneOldEntries()
+
+        eventDao.insert(
+            SyncEventEntity(
+                timestampMillis = System.currentTimeMillis(),
+                eventType = "SYNC_SUCCESS",
+                regionId = regionId,
+                queueId = queueId,
+                details = "v=${dto.v} day=${dto.d}",
+            ),
+        )
+        eventDao.pruneOldEntries()
 
         purgeStaleCache()
         runCatching { OutageGlanceAppWidget().updateAll(context) }
@@ -127,6 +157,15 @@ class ScheduleRepositoryImpl @Inject constructor(
             val meta = syncDao.get(regionId, queueId, remoteDay)
             if (meta != null && meta.cachedVersion >= remoteVersion) {
                 Timber.d("sync skip up-to-date r=$regionId q=$queueId d=$remoteDay v=$remoteVersion")
+                eventDao.insert(
+                    SyncEventEntity(
+                        timestampMillis = System.currentTimeMillis(),
+                        eventType = "SYNC_SKIPPED",
+                        regionId = regionId,
+                        queueId = queueId,
+                        details = "cached v=$remoteVersion d=$remoteDay",
+                    ),
+                )
                 return
             }
         }

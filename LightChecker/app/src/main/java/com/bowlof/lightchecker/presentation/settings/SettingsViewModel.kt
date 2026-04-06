@@ -2,7 +2,6 @@ package com.bowlof.lightchecker.presentation.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bowlof.lightchecker.domain.model.SavedPlace
 import com.bowlof.lightchecker.domain.repository.LocationsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,5 +23,13 @@ class SettingsViewModel @Inject constructor(
 
     fun deletePlace(id: Long) {
         viewModelScope.launch { locationsRepository.deletePlace(id) }
+    }
+
+    fun toggleNotifications(id: Long, enabled: Boolean) {
+        viewModelScope.launch { locationsRepository.setNotificationsEnabled(id, enabled) }
+    }
+
+    fun swapOrder(idA: Long, idB: Long) {
+        viewModelScope.launch { locationsRepository.swapSortOrder(idA, idB) }
     }
 }

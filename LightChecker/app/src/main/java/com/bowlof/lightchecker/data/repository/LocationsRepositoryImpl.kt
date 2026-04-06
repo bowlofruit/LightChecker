@@ -77,4 +77,17 @@ class LocationsRepositoryImpl @Inject constructor(
         }
         topicManager.syncSubscriptionsAfterDataChange()
     }
+
+    override suspend fun setNotificationsEnabled(id: Long, enabled: Boolean) {
+        dao.setNotificationsEnabled(id, enabled)
+    }
+
+    override suspend fun swapSortOrder(idA: Long, idB: Long) {
+        database.withTransaction {
+            val a = dao.getById(idA) ?: return@withTransaction
+            val b = dao.getById(idB) ?: return@withTransaction
+            dao.updateSortOrder(idA, b.sortOrder)
+            dao.updateSortOrder(idB, a.sortOrder)
+        }
+    }
 }

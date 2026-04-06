@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bowlof.lightchecker.data.catalog.CitiesCatalogLoader
 import com.bowlof.lightchecker.data.catalog.CityCatalogEntry
-import com.bowlof.lightchecker.data.catalog.QueueCatalogEntry
 import com.bowlof.lightchecker.data.location.DeviceLocationReader
 import com.bowlof.lightchecker.domain.model.CityCatalogRow
 import com.bowlof.lightchecker.domain.model.LocationSource

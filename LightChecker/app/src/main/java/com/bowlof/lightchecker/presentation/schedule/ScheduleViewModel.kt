@@ -5,6 +5,7 @@ package com.bowlof.lightchecker.presentation.schedule
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bowlof.lightchecker.domain.model.OutageInterval
 import com.bowlof.lightchecker.domain.model.SavedPlace
 import com.bowlof.lightchecker.domain.model.SelectedScheduleDay
 import com.bowlof.lightchecker.domain.repository.LocationsRepository
@@ -14,6 +15,9 @@ import com.bowlof.lightchecker.presentation.util.OutageIntervalFormatter
 import com.bowlof.lightchecker.presentation.util.toScheduleUserMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,6 +40,8 @@ data class ScheduleUiState(
     val intervalLines: List<String> = emptyList(),
     val isRefreshing: Boolean = false,
     val hasDataForSelectedDay: Boolean = false,
+    val lastSyncFormatted: String? = null,
+    val intervals: List<OutageInterval> = emptyList(),
 )
 
 @HiltViewModel
@@ -88,6 +94,8 @@ class ScheduleViewModel @Inject constructor(
                         intervalLines = schedule.intervals.map { OutageIntervalFormatter.format(it) },
                         isRefreshing = refreshing,
                         hasDataForSelectedDay = schedule.intervals.isNotEmpty(),
+                        lastSyncFormatted = schedule.lastSyncAtEpochMillis?.let { formatSyncTime(it) },
+                        intervals = schedule.intervals,
                     )
                 }
         }
@@ -98,6 +106,16 @@ class ScheduleViewModel @Inject constructor(
             ScheduleUiState(),
         )
 
+    private fun formatSyncTime(epochMillis: Long): String {
+        val instant = Instant.ofEpochMilli(epochMillis)
+        return SYNC_TIME_FMT.format(instant.atZone(KYIV_ZONE))
+    }
+
+    companion object {
+        private val KYIV_ZONE = ZoneId.of("Europe/Kyiv")
+        private val SYNC_TIME_FMT = DateTimeFormatter.ofPattern("HH:mm")
+    }
+
     private data class Quadruple<A, B, C, D>(
         val first: A,
         val second: B,
@@ -107,6 +125,13 @@ class ScheduleViewModel @Inject constructor(
 
     fun selectTab(index: Int) {
         _selectedTabIndex.update { index }
+    }
+
+    /** Auto-select the tab matching [regionId] and [queueId] (used for deep linking from notifications). */
+    fun selectPlaceByRegionQueue(regionId: String, queueId: String) {
+        val places = uiState.value.places
+        val index = places.indexOfFirst { it.regionId == regionId && it.queueId == queueId }
+        if (index >= 0) _selectedTabIndex.update { index }
     }
 
     fun selectDay(day: SelectedScheduleDay) {

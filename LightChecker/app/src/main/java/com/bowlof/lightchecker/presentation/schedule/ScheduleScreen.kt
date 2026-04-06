@@ -9,7 +9,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.outlined.AddLocationAlt
+import androidx.compose.material.icons.outlined.EventBusy
+import androidx.compose.material.icons.outlined.LightMode
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,7 +33,9 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -38,7 +44,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bowlof.lightchecker.R
+import com.bowlof.lightchecker.domain.model.OutageInterval
 import com.bowlof.lightchecker.domain.model.SelectedScheduleDay
+import com.bowlof.lightchecker.presentation.util.EmptyStateBox
+import com.bowlof.lightchecker.domain.time.KyivTime
+import com.bowlof.lightchecker.domain.usecase.NextOutageCalculator
+import com.bowlof.lightchecker.domain.usecase.OutageStatus
+import java.time.ZonedDateTime
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -134,19 +147,40 @@ fun ScheduleRoute(
                     }
                 }
 
+                ui.lastSyncFormatted?.let { syncTime ->
+                    Text(
+                        stringResource(R.string.schedule_last_sync, syncTime),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
+
+                if (ui.selectedDay == SelectedScheduleDay.Today && ui.intervalLines.isNotEmpty()) {
+                    CountdownBanner(
+                        intervals = ui.intervals,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
+
                 when {
                     ui.places.isEmpty() -> {
-                        Text(
-                            stringResource(R.string.onboarding_pick_city_queue),
-                            modifier = Modifier.padding(16.dp),
+                        EmptyStateBox(
+                            icon = Icons.Outlined.AddLocationAlt,
+                            message = stringResource(R.string.onboarding_pick_city_queue),
+                            actionLabel = stringResource(R.string.settings_add_place),
+                            onAction = onOpenSettings,
+                            modifier = Modifier.padding(32.dp),
                         )
                     }
 
                     !ui.hasDataForSelectedDay && ui.intervalLines.isEmpty() -> {
-                        Text(
-                            stringResource(R.string.schedule_empty_day),
-                            modifier = Modifier.padding(16.dp),
-                            style = MaterialTheme.typography.bodyLarge,
+                        EmptyStateBox(
+                            icon = Icons.Outlined.EventBusy,
+                            message = stringResource(R.string.schedule_empty_day),
+                            modifier = Modifier.padding(32.dp),
                         )
                     }
 
@@ -156,19 +190,82 @@ fun ScheduleRoute(
                             modifier = Modifier.fillMaxSize(),
                         ) {
                             items(ui.intervalLines, key = { it }) { line ->
-                                ListItem(headlineContent = { Text(line) })
+                                ListItem(
+                                    headlineContent = { Text(line) },
+                                    modifier = Modifier.animateItem(),
+                                )
                             }
                         }
                     }
 
                     else -> {
-                        Text(
-                            stringResource(R.string.schedule_no_outages),
-                            modifier = Modifier.padding(16.dp),
+                        EmptyStateBox(
+                            icon = Icons.Outlined.LightMode,
+                            message = stringResource(R.string.schedule_no_outages),
+                            modifier = Modifier.padding(32.dp),
                         )
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CountdownBanner(
+    intervals: List<OutageInterval>,
+    modifier: Modifier = Modifier,
+) {
+    // Recompute every 60 seconds
+    var tick by remember { mutableIntStateOf(0) }
+    LaunchedEffect(tick) {
+        delay(60_000)
+        tick++
+    }
+
+    val now = remember(tick) {
+        val kyivNow = ZonedDateTime.now(KyivTime.zone)
+        kyivNow.hour * 60 + kyivNow.minute
+    }
+    val status = remember(intervals, now) {
+        NextOutageCalculator.calculate(intervals, now)
+    }
+
+    val text = when (status) {
+        is OutageStatus.CurrentlyOff -> stringResource(
+            R.string.schedule_currently_off,
+            NextOutageCalculator.formatMinute(status.endsAtMinute),
+        )
+        is OutageStatus.NextOff -> {
+            val h = status.minutesUntil / 60
+            val m = status.minutesUntil % 60
+            if (h > 0) {
+                stringResource(R.string.schedule_next_off_hours, h, m)
+            } else {
+                stringResource(R.string.schedule_next_off_minutes, m)
+            }
+        }
+        is OutageStatus.AllDone -> stringResource(R.string.schedule_all_done)
+        is OutageStatus.NoData -> return
+    }
+
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = when (status) {
+                is OutageStatus.CurrentlyOff -> MaterialTheme.colorScheme.errorContainer
+                else -> MaterialTheme.colorScheme.primaryContainer
+            },
+        ),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(16.dp),
+            color = when (status) {
+                is OutageStatus.CurrentlyOff -> MaterialTheme.colorScheme.onErrorContainer
+                else -> MaterialTheme.colorScheme.onPrimaryContainer
+            },
+        )
     }
 }
