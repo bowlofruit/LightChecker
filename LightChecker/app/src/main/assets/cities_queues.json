@@ -1,31 +1,58 @@
 {
-  "catalogVersion": 1,
+  "catalogVersion": 2,
   "cities": [
     {
       "cityId": "kyiv",
       "displayName": "Київ",
       "queues": [
-        {
-          "queueId": "1A",
-          "displayName": "Черга 1.1",
-          "regionId": "kyiv"
-        },
-        {
-          "queueId": "2.1",
-          "displayName": "Черга 2.1",
-          "regionId": "kyiv"
-        }
+        { "queueId": "1", "displayName": "Черга 1", "regionId": "kyiv" },
+        { "queueId": "2", "displayName": "Черга 2", "regionId": "kyiv" },
+        { "queueId": "3", "displayName": "Черга 3", "regionId": "kyiv" },
+        { "queueId": "4", "displayName": "Черга 4", "regionId": "kyiv" },
+        { "queueId": "5", "displayName": "Черга 5", "regionId": "kyiv" },
+        { "queueId": "6", "displayName": "Черга 6", "regionId": "kyiv" }
+      ]
+    },
+    {
+      "cityId": "cherkasy",
+      "displayName": "Черкаси",
+      "queues": [
+        { "queueId": "1.1", "displayName": "Підчерга 1.1", "regionId": "cherkasy" },
+        { "queueId": "1.2", "displayName": "Підчерга 1.2", "regionId": "cherkasy" },
+        { "queueId": "2.1", "displayName": "Підчерга 2.1", "regionId": "cherkasy" },
+        { "queueId": "2.2", "displayName": "Підчерга 2.2", "regionId": "cherkasy" },
+        { "queueId": "3.1", "displayName": "Підчерга 3.1", "regionId": "cherkasy" },
+        { "queueId": "3.2", "displayName": "Підчерга 3.2", "regionId": "cherkasy" },
+        { "queueId": "4.1", "displayName": "Підчерга 4.1", "regionId": "cherkasy" },
+        { "queueId": "4.2", "displayName": "Підчерга 4.2", "regionId": "cherkasy" },
+        { "queueId": "5.1", "displayName": "Підчерга 5.1", "regionId": "cherkasy" },
+        { "queueId": "5.2", "displayName": "Підчерга 5.2", "regionId": "cherkasy" },
+        { "queueId": "6.1", "displayName": "Підчерга 6.1", "regionId": "cherkasy" },
+        { "queueId": "6.2", "displayName": "Підчерга 6.2", "regionId": "cherkasy" }
       ]
     },
     {
       "cityId": "lviv",
       "displayName": "Львів",
       "queues": [
-        {
-          "queueId": "1.1",
-          "displayName": "Черга 1.1",
-          "regionId": "lviv"
-        }
+        { "queueId": "1", "displayName": "Черга 1", "regionId": "lviv" },
+        { "queueId": "2", "displayName": "Черга 2", "regionId": "lviv" },
+        { "queueId": "3", "displayName": "Черга 3", "regionId": "lviv" },
+        { "queueId": "4", "displayName": "Черга 4", "regionId": "lviv" },
+        { "queueId": "5", "displayName": "Черга 5", "regionId": "lviv" },
+        { "queueId": "6", "displayName": "Черга 6", "regionId": "lviv" }
+      ]
+    },
+    {
+      "cityId": "odesa",
+      "displayName": "Одеса",
+      "queues": [
+        { "queueId": "1", "displayName": "Черга 1", "regionId": "odesa" },
+        { "queueId": "2", "displayName": "Черга 2", "regionId": "odesa" },
+        { "queueId": "3", "displayName": "Черга 3", "regionId": "odesa" },
+        { "queueId": "4", "displayName": "Черга 4", "regionId": "odesa" },
+        { "queueId": "5", "displayName": "Черга 5", "regionId": "odesa" },
+        { "queueId": "6", "displayName": "Черга 6", "regionId": "odesa" }
       ]
     }
   ]
