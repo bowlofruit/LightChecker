@@ -181,12 +181,23 @@ function parseDtekScheduleText(
   return result;
 }
 
+/**
+ * Extract queue IDs from a line. Handles OCR artifacts:
+ * "24 Черга" → "2.1" (OCR merges dot+1 into "4")
+ * "34 Черга" → "3.1"
+ */
 function extractQueueIds(line: string): string[] {
   const re = /(\d+)[.,\s]*(\d+)\s*Черг/gi;
   const ids: string[] = [];
   let m: RegExpExecArray | null;
   while ((m = re.exec(line)) !== null) {
-    ids.push(`${m[1]}.${m[2]}`);
+    const major = m[1];
+    let minor = m[2];
+    // Fix: single-digit "X4" → "X.1" (OCR reads ".1" as "4")
+    if (major.length === 1 && minor.length === 1 && parseInt(minor) > 2) {
+      minor = "1";
+    }
+    ids.push(`${major}.${minor}`);
   }
   return ids;
 }
