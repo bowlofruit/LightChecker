@@ -230,13 +230,15 @@ function assignByPosition(
 
   // Normalize common OCR artifacts before parsing:
   const normalized = timeLine
-    .replace(/[ОО]/g, "0")                     // Cyrillic "О" → "0"
-    .replace(/3(\d{2})(\d{2})/g, "3 $1:$2")   // "31730" → "3 17:30"
-    .replace(/3(\d{2})\.(\d{2})/g, "3 $1:$2")  // "307.00" → "3 07:00"
-    .replace(/(\d{2})\.(\d{2})/g, "$1:$2")     // "11.00" → "11:00"
-    .replace(/\bpo\b/gi, "до")                  // "po" → "до"
-    .replace(/\bno\b/gi, "до")                  // "no" → "до"
-    .replace(/\bgo\b/gi, "до");                 // "go" → "до"
+    .replace(/\u041E\u041E/g, "00")               // Cyrillic "ОО" → "00"
+    .replace(/\u041E(?=\d|:)/g, "0")             // Cyrillic "О" → "0" before digit/colon
+    .replace(/3(\d{2})(\d{2})/g, "3 $1:$2")    // "31730" → "3 17:30"
+    .replace(/3(\d{2})\.(\d{2})/g, "3 $1:$2")   // "307.00" → "3 07:00"
+    .replace(/(\d{2})\.(\d{2})/g, "$1:$2")      // "11.00" → "11:00"
+    .replace(/\bpo\b/gi, "до")                   // "po" → "до"
+    .replace(/\bno\b/gi, "до")                   // "no" → "до"
+    .replace(/\bgo\b/gi, "до")                   // "go" → "до"
+    .replace(/з\s+(\d{1,2})\s+(до|по)/g, "з $1:00 $2"); // "з 00 до" → "з 00:00 до"
 
   const segmentWidth = normalized.length / queueIds.length;
   const re =
