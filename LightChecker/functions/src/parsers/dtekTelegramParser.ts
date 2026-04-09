@@ -187,17 +187,15 @@ function parseDtekScheduleText(
  * "34 Черга" → "3.1"
  */
 function extractQueueIds(line: string): string[] {
-  const re = /(\d+)[.,\s]*(\d+)\s*Черг/gi;
+  // Match "1.1 Черга", "4. 1 Черга", "11 Черга", "24 Черга"
+  const re = /(\d)[.,\s]*(\d)\s*Черг/gi;
   const ids: string[] = [];
   let m: RegExpExecArray | null;
   while ((m = re.exec(line)) !== null) {
-    const major = m[1];
     let minor = m[2];
-    // Fix: single-digit "X4" → "X.1" (OCR reads ".1" as "4")
-    if (major.length === 1 && minor.length === 1 && parseInt(minor) > 2) {
-      minor = "1";
-    }
-    ids.push(`${major}.${minor}`);
+    // Fix "24"→"2.1" (OCR reads ".1" as "4")
+    if (parseInt(minor) > 2) minor = "1";
+    ids.push(`${m[1]}.${minor}`);
   }
   return ids;
 }
@@ -231,13 +229,14 @@ function assignByPosition(
   if (queueIds.length === 0) return;
 
   // Normalize common OCR artifacts before parsing:
-  // "31730" → "3 17:30", "307.00" → "3 07:00", "po" → "до"
   const normalized = timeLine
-    .replace(/3(\d{2})(\d{2})/g, "3 $1:$2")  // "31730" → "3 17:30"
-    .replace(/3(\d{2})\.(\d{2})/g, "3 $1:$2") // "307.00" → "3 07:00"
-    .replace(/\bpo\b/gi, "до")                 // "po" → "до"
-    .replace(/\bno\b/gi, "до")                 // "no" → "до"
-    .replace(/\bgo\b/gi, "до");                // "go" → "до"
+    .replace(/[ОО]/g, "0")                     // Cyrillic "О" → "0"
+    .replace(/3(\d{2})(\d{2})/g, "3 $1:$2")   // "31730" → "3 17:30"
+    .replace(/3(\d{2})\.(\d{2})/g, "3 $1:$2")  // "307.00" → "3 07:00"
+    .replace(/(\d{2})\.(\d{2})/g, "$1:$2")     // "11.00" → "11:00"
+    .replace(/\bpo\b/gi, "до")                  // "po" → "до"
+    .replace(/\bno\b/gi, "до")                  // "no" → "до"
+    .replace(/\bgo\b/gi, "до");                 // "go" → "до"
 
   const segmentWidth = normalized.length / queueIds.length;
   const re =
