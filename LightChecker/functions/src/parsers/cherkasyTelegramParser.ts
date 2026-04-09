@@ -5,8 +5,8 @@ import { ScheduleParser } from "./types";
  *
  * Supports two post formats:
  *
- * 1. Per-subqueue (ГПВ):
- *    "4.1 18:00 - 20:00"
+ * 1. Per-subqueue (ГПВ) — one line per queue, may contain multiple intervals:
+ *    "4.1 09:00 - 11:00, 15:00 - 17:00"
  *    "5.1 20:00 - 22:00"
  *
  * 2. General time range (ГОП):
@@ -21,31 +21,25 @@ export class CherkasyTelegramParser implements ScheduleParser {
     const text = typeof data === "string" ? data : data.toString("utf-8");
     const pairs: [number, number][] = [];
 
-    // Pattern 1: per-subqueue lines — "4.1 18:00 - 20:00"
-    const queueLineRe =
-      /(\d+\.\d+)\s+(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})/g;
-    let match: RegExpExecArray | null;
+    // Pattern 1: process line-by-line for "4.1 09:00 - 11:00, 15:00 - 17:00"
     let foundQueueLines = false;
-
-    while ((match = queueLineRe.exec(text)) !== null) {
+    for (const line of text.split(/\n/)) {
+      const lineMatch = line.match(/^(\d+\.\d+)\s+(.+)/);
+      if (!lineMatch) continue;
       foundQueueLines = true;
-      const queueId = match[1];
+      const queueId = lineMatch[1];
       if (this.targetQueueId && queueId !== this.targetQueueId) continue;
-
-      const startMin = parseInt(match[2]) * 60 + parseInt(match[3]);
-      const endMin = parseInt(match[4]) * 60 + parseInt(match[5]);
-      if (startMin <= endMin && endMin <= 1440) {
-        pairs.push([startMin, endMin]);
-      }
+      pairs.push(...extractTimeRanges(lineMatch[2]));
     }
 
     if (foundQueueLines) return pairs;
 
     // Pattern 2: general "з HH:MM до HH:MM" (ГОП format)
     const gopRe = /з\s+(\d{1,2}):(\d{2})\s+до\s+(\d{1,2}):(\d{2})/g;
-    while ((match = gopRe.exec(text)) !== null) {
-      const startMin = parseInt(match[1]) * 60 + parseInt(match[2]);
-      const endMin = parseInt(match[3]) * 60 + parseInt(match[4]);
+    let gopMatch: RegExpExecArray | null;
+    while ((gopMatch = gopRe.exec(text)) !== null) {
+      const startMin = parseInt(gopMatch[1]) * 60 + parseInt(gopMatch[2]);
+      const endMin = parseInt(gopMatch[3]) * 60 + parseInt(gopMatch[4]);
       if (startMin <= endMin && endMin <= 1440) {
         pairs.push([startMin, endMin]);
       }
@@ -53,6 +47,21 @@ export class CherkasyTelegramParser implements ScheduleParser {
 
     return pairs;
   }
+}
+
+/** Extract all "HH:MM - HH:MM" ranges from a string fragment. */
+function extractTimeRanges(fragment: string): [number, number][] {
+  const re = /(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})/g;
+  const results: [number, number][] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(fragment)) !== null) {
+    const startMin = parseInt(m[1]) * 60 + parseInt(m[2]);
+    const endMin = parseInt(m[3]) * 60 + parseInt(m[4]);
+    if (startMin <= endMin && endMin <= 1440) {
+      results.push([startMin, endMin]);
+    }
+  }
+  return results;
 }
 
 /**
@@ -63,19 +72,14 @@ export function parseAllQueues(
   text: string,
 ): Map<string, [number, number][]> {
   const result = new Map<string, [number, number][]>();
-  const re =
-    /(\d+\.\d+)\s+(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})/g;
-  let match: RegExpExecArray | null;
-
-  while ((match = re.exec(text)) !== null) {
-    const queueId = match[1];
-    const startMin = parseInt(match[2]) * 60 + parseInt(match[3]);
-    const endMin = parseInt(match[4]) * 60 + parseInt(match[5]);
-    if (startMin <= endMin && endMin <= 1440) {
-      const list = result.get(queueId) ?? [];
-      list.push([startMin, endMin]);
-      result.set(queueId, list);
-    }
+  for (const line of text.split(/\n/)) {
+    const lineMatch = line.match(/^(\d+\.\d+)\s+(.+)/);
+    if (!lineMatch) continue;
+    const queueId = lineMatch[1];
+    const intervals = extractTimeRanges(lineMatch[2]);
+    const list = result.get(queueId) ?? [];
+    list.push(...intervals);
+    result.set(queueId, list);
   }
 
   return result;
