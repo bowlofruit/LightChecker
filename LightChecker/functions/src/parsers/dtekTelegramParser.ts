@@ -212,7 +212,8 @@ function findTimeLine(
     i < Math.min(lines.length, startIdx + maxLookahead);
     i++
   ) {
-    if (/\d{1,2}:\d{2}/.test(lines[i])) return lines[i];
+    // Match both "07:00" and OCR-broken "307.00" or "31730"
+    if (/\d{1,2}[:.]\d{2}/.test(lines[i]) || /3\d{4,5}/.test(lines[i])) return lines[i];
   }
   return null;
 }
@@ -228,13 +229,27 @@ function assignByPosition(
   result: Map<string, [number, number][]>,
 ): void {
   if (queueIds.length === 0) return;
-  const segmentWidth = timeLine.length / queueIds.length;
+
+  // Normalize common OCR artifacts before parsing:
+  // "31730" → "3 17:30", "307.00" → "3 07:00", "po" → "до"
+  const normalized = timeLine
+    .replace(/3(\d{2})(\d{2})/g, "3 $1:$2")  // "31730" → "3 17:30"
+    .replace(/3(\d{2})\.(\d{2})/g, "3 $1:$2") // "307.00" → "3 07:00"
+    .replace(/\bpo\b/gi, "до")                 // "po" → "до"
+    .replace(/\bno\b/gi, "до")                 // "no" → "до"
+    .replace(/\bgo\b/gi, "до");                // "go" → "до"
+
+  const segmentWidth = normalized.length / queueIds.length;
   const re =
-    /(\d{1,2})[:.:](\d{2})\s*(?:до|по|go|no)\s*(\d{1,2})[:.:](\d{2})/g;
+    /(\d{1,2})[:.:](\d{2})\s*(?:до|по)\s*(\d{1,2})[:.:](\d{2})/g;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(timeLine)) !== null) {
+  while ((m = re.exec(normalized)) !== null) {
     const startMin = parseInt(m[1]) * 60 + parseInt(m[2]);
-    const endMin = parseInt(m[3]) * 60 + parseInt(m[4]);
+    let endMin = parseInt(m[3]) * 60 + parseInt(m[4]);
+    // Fix OCR: "17:30 до 2:00" should be "17:30 до 21:00"
+    if (endMin < startMin && endMin < 360) {
+      endMin = parseInt(m[3] + "1") * 60 + parseInt(m[4]);
+    }
     if (startMin >= endMin || endMin > 1440) continue;
 
     const segmentIdx = Math.min(
