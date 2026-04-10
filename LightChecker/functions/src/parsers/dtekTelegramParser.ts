@@ -1,6 +1,14 @@
 import sharp from "sharp";
 import Tesseract from "tesseract.js";
+import { extractDtekScheduleDayYyyymmdd } from "../dtekPostDate";
 import { ScheduleParser } from "./types";
+
+export type DtekScheduleParseResult = {
+  scheduleDayYyyymmdd: number | null;
+  queues: Map<string, [number, number][]>;
+};
+
+export { extractDtekScheduleDayYyyymmdd, sliceDtekTextForRegion } from "../dtekPostDate";
 
 /** Post text keyword → regionId. */
 const REGION_KEYWORDS: Record<string, string> = {
@@ -49,7 +57,7 @@ export class DtekTelegramParser implements ScheduleParser {
   }
 
   /** Fetch DTEK channel, find posts for target city, OCR images, return per-queue intervals. */
-  async parseChannelAsync(): Promise<Map<string, [number, number][]>> {
+  async parseChannelAsync(): Promise<DtekScheduleParseResult> {
     const html = await fetchDtekChannelHtml();
     const posts = parseDtekChannelPosts(html);
     return this.parseFromPosts(posts);
@@ -58,7 +66,7 @@ export class DtekTelegramParser implements ScheduleParser {
   /** Reuse already-fetched channel HTML (e.g. one fetch for Kyiv/Odesa/Dnipro). */
   async parseFromPosts(
     posts: ChannelPost[],
-  ): Promise<Map<string, [number, number][]>> {
+  ): Promise<DtekScheduleParseResult> {
     const result = new Map<string, [number, number][]>();
 
     const targetPosts = posts.filter((p) => {
@@ -67,9 +75,15 @@ export class DtekTelegramParser implements ScheduleParser {
       return regionId === this.targetRegionId;
     });
 
-    if (targetPosts.length === 0) return result;
+    if (targetPosts.length === 0) {
+      return { scheduleDayYyyymmdd: null, queues: result };
+    }
 
     const latest = targetPosts[targetPosts.length - 1];
+    const scheduleDayYyyymmdd = extractDtekScheduleDayYyyymmdd(
+      latest.text,
+      this.targetRegionId,
+    );
 
     const scheduleImages = latest.imageUrls.filter(
       (url) => !url.includes("user_photo"),
@@ -94,7 +108,7 @@ export class DtekTelegramParser implements ScheduleParser {
       }
     }
 
-    return result;
+    return { scheduleDayYyyymmdd, queues: result };
   }
 }
 

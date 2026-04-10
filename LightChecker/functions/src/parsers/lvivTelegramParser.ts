@@ -1,6 +1,15 @@
 import sharp from "sharp";
 import Tesseract from "tesseract.js";
+import { extractLvivScheduleDayYyyymmdd } from "../lvivGraphicDate";
 import { ScheduleParser } from "./types";
+
+/** Результат парсингу Львова: черги + дата з картинки (ДД.ММ), якщо OCR її знайшов. */
+export type LvivScheduleParseResult = {
+  scheduleDayYyyymmdd: number | null;
+  queues: Map<string, [number, number][]>;
+};
+
+export { extractLvivScheduleDayYyyymmdd } from "../lvivGraphicDate";
 
 const LVIV_CHANNEL = "lvivoblenergo";
 
@@ -51,18 +60,22 @@ export class LvivTelegramParser implements ScheduleParser {
     return [];
   }
 
-  async parseChannelAsync(): Promise<Map<string, [number, number][]>> {
+  async parseChannelAsync(): Promise<LvivScheduleParseResult> {
     const html = await fetchLvivChannelHtml();
     return this.parseFromHtml(html);
   }
 
-  async parseFromHtml(html: string): Promise<Map<string, [number, number][]>> {
+  async parseFromHtml(html: string): Promise<LvivScheduleParseResult> {
     const imageUrl = findLatestScheduleImage(html);
-    if (!imageUrl) return new Map();
+    if (!imageUrl) {
+      return { scheduleDayYyyymmdd: null, queues: new Map() };
+    }
 
     const raw = await fetchImage(imageUrl);
     const text = await ocrImage(raw);
-    return parseLvivScheduleText(text);
+    const scheduleDayYyyymmdd = extractLvivScheduleDayYyyymmdd(text);
+    const queues = parseLvivScheduleText(text);
+    return { scheduleDayYyyymmdd, queues };
   }
 }
 

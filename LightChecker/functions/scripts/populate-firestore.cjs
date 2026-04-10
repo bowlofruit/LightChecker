@@ -169,14 +169,19 @@ async function processDtekRegions(day, prevFp) {
 
       console.log(`\n=== ${label} ===`);
       const parser = new DtekTelegramParser(regionId);
-      const queues = await parser.parseFromPosts(posts);
+      const { scheduleDayYyyymmdd, queues } = await parser.parseFromPosts(posts);
       if (queues.size === 0) {
         console.log("  No data found");
         continue;
       }
 
+      const dayForDtek = scheduleDayYyyymmdd ?? day;
+      if (scheduleDayYyyymmdd != null && scheduleDayYyyymmdd !== day) {
+        console.log(`  Дата з тексту поста: ${scheduleDayYyyymmdd} (Kyiv today: ${day})`);
+      }
+
       for (const [queueId, intervals] of queues) {
-        const result = await writeSchedule(regionId, queueId, day, intervals);
+        const result = await writeSchedule(regionId, queueId, dayForDtek, intervals);
         const fmt = intervals.map(([s, e]) => `${formatMin(s)}-${formatMin(e)}`).join(", ");
         console.log(`  ${queueId}: ${fmt} → ${result.skipped ? "SKIP" : "v" + result.version}`);
       }
@@ -199,14 +204,19 @@ async function processLviv(day, prevFp) {
     }
 
     const parser = new LvivTelegramParser();
-    const queues = await parser.parseFromHtml(html);
+    const { scheduleDayYyyymmdd, queues } = await parser.parseFromHtml(html);
     if (queues.size === 0) {
       console.log("  No data found");
       return;
     }
 
+    const dayForLviv = scheduleDayYyyymmdd ?? day;
+    if (scheduleDayYyyymmdd != null && scheduleDayYyyymmdd !== day) {
+      console.log(`  Дата з графіка (OCR): ${scheduleDayYyyymmdd} (Kyiv today: ${day})`);
+    }
+
     for (const [queueId, intervals] of queues) {
-      const result = await writeSchedule("lviv", queueId, day, intervals);
+      const result = await writeSchedule("lviv", queueId, dayForLviv, intervals);
       const fmt = intervals.map(([s, e]) => `${formatMin(s)}-${formatMin(e)}`).join(", ");
       console.log(`  ${queueId}: ${fmt} → ${result.skipped ? "SKIP" : "v" + result.version}`);
     }

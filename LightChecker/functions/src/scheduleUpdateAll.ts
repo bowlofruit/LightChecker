@@ -116,13 +116,21 @@ async function processDtekCity(
 ): Promise<CityResult> {
   try {
     const parser = new DtekTelegramParser(regionId);
-    const queues = await parser.parseChannelAsync();
+    const { scheduleDayYyyymmdd, queues } = await parser.parseChannelAsync();
+    const dayForDtek = scheduleDayYyyymmdd ?? day;
 
     let updated = 0;
     let skipped = 0;
 
     for (const [queueId, intervals] of queues) {
-      const result = await applyScheduleUpdate(db, messaging, regionId, queueId, day, intervals);
+      const result = await applyScheduleUpdate(
+        db,
+        messaging,
+        regionId,
+        queueId,
+        dayForDtek,
+        intervals,
+      );
       if (result.skipped) skipped++;
       else updated++;
     }
@@ -142,13 +150,21 @@ async function processLviv(
 ): Promise<CityResult> {
   try {
     const parser = new LvivTelegramParser();
-    const queues = await parser.parseChannelAsync();
+    const { scheduleDayYyyymmdd, queues } = await parser.parseChannelAsync();
+    const dayForLviv = scheduleDayYyyymmdd ?? day;
 
     let updated = 0;
     let skipped = 0;
 
     for (const [queueId, intervals] of queues) {
-      const result = await applyScheduleUpdate(db, messaging, "lviv", queueId, day, intervals);
+      const result = await applyScheduleUpdate(
+        db,
+        messaging,
+        "lviv",
+        queueId,
+        dayForLviv,
+        intervals,
+      );
       if (result.skipped) skipped++;
       else updated++;
     }

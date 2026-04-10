@@ -13,7 +13,10 @@ function formatMin(min) {
 async function parseCity(regionId, label) {
   console.log(`\n=== ${label} (${regionId}) ===`);
   const parser = new DtekTelegramParser(regionId);
-  const queues = await parser.parseChannelAsync();
+  const { scheduleDayYyyymmdd, queues } = await parser.parseChannelAsync();
+  if (scheduleDayYyyymmdd != null) {
+    console.log(`  scheduleDayYyyymmdd: ${scheduleDayYyyymmdd}`);
+  }
   if (queues.size === 0) {
     console.log("  (no schedule data found)");
     return;
