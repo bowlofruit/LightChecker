@@ -1,25 +1,28 @@
 /**
  * Populate Firestore with real schedule data from Telegram channels.
- * Runs locally — no Cloud Functions deployment needed.
+ *
+ * Works in two modes:
+ *   1. GitHub Actions: uses GOOGLE_APPLICATION_CREDENTIALS env var (Service Account)
+ *   2. Local: uses Firebase CLI credentials or Application Default Credentials
  *
  * Usage:
  *   node functions/scripts/populate-firestore.cjs
- *
- * Prerequisites:
- *   - Firebase CLI authenticated (`npx firebase-tools login`)
- *   - Project set to lightchecker-ebe94
  */
 
 const admin = require("firebase-admin");
-const { CherkasyTelegramParser, parseAllQueues } = require("../lib/parsers/cherkasyTelegramParser");
+const { parseAllQueues } = require("../lib/parsers/cherkasyTelegramParser");
 const { DtekTelegramParser } = require("../lib/parsers/dtekTelegramParser");
 const { LvivTelegramParser } = require("../lib/parsers/lvivTelegramParser");
 const { firestoreDocumentId } = require("../lib/documentId");
 const { normalizeIntervalPairs, pairsToFlatMinutes } = require("../lib/normalizeIntervals");
 const { kyivTodayYyyymmdd } = require("../lib/kyivDate");
 
-// Initialize Firebase Admin with default credentials
-admin.initializeApp({ projectId: "lightchecker-ebe94" });
+// Initialize Firebase Admin — auto-detects credentials from env
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+  admin.initializeApp();
+} else {
+  admin.initializeApp({ projectId: "lightchecker-ebe94" });
+}
 const db = admin.firestore();
 
 function formatMin(min) {
