@@ -48,10 +48,10 @@ export function yyyymmddFromGraphicDayMonth(
 ): number {
   const todayN = kyivTodayYyyymmdd(now);
   let y = Math.floor(todayN / 10000);
-  let candidate = y * 10000 + month * 100 + day;
+  const candidate = y * 10000 + month * 100 + day;
   const tMs = yyyymmddUtcMidnight(todayN);
-  let cMs = yyyymmddUtcMidnight(candidate);
-  let dayDiff = (cMs - tMs) / 86400000;
+  const cMs = yyyymmddUtcMidnight(candidate);
+  const dayDiff = (cMs - tMs) / 86400000;
   if (dayDiff > 90) y -= 1;
   else if (dayDiff < -90) y += 1;
   return y * 10000 + month * 100 + day;
