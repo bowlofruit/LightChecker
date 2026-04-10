@@ -2,6 +2,41 @@ import sharp from "sharp";
 import Tesseract from "tesseract.js";
 import { ScheduleParser } from "./types";
 
+const LVIV_CHANNEL = "lvivoblenergo";
+
+/**
+ * Fingerprint of the latest image-only schedule post (same post → same picture).
+ */
+export function lvivSchedulePostFingerprint(html: string): string | null {
+  const blocks = html.split("tgme_widget_message_wrap");
+  let latest: string | null = null;
+
+  for (const block of blocks) {
+    const postMatch = block.match(
+      new RegExp(`data-post="${LVIV_CHANNEL}/(\\d+)"`),
+    );
+    if (!postMatch) continue;
+
+    const textMatch = block.match(
+      /tgme_widget_message_text[^>]*>([\s\S]*?)<\/div>/,
+    );
+    const text = textMatch
+      ? textMatch[1].replace(/<[^>]+>/g, "").trim()
+      : "";
+    if (text.length > 10) continue;
+
+    const imgRe = /https:\/\/cdn[^"'\s)]+\.(?:jpg|jpeg|png|webp)/gi;
+    let im: RegExpExecArray | null;
+    while ((im = imgRe.exec(block)) !== null) {
+      if (!im[0].includes("emoji") && !im[0].includes("user_photo")) {
+        latest = `${LVIV_CHANNEL}/${postMatch[1]}`;
+      }
+    }
+  }
+
+  return latest;
+}
+
 /**
  * Parser for Львівобленерго Telegram channel (t.me/lvivoblenergo).
  *
@@ -17,7 +52,11 @@ export class LvivTelegramParser implements ScheduleParser {
   }
 
   async parseChannelAsync(): Promise<Map<string, [number, number][]>> {
-    const html = await fetchChannelHtml();
+    const html = await fetchLvivChannelHtml();
+    return this.parseFromHtml(html);
+  }
+
+  async parseFromHtml(html: string): Promise<Map<string, [number, number][]>> {
     const imageUrl = findLatestScheduleImage(html);
     if (!imageUrl) return new Map();
 
@@ -27,7 +66,7 @@ export class LvivTelegramParser implements ScheduleParser {
   }
 }
 
-async function fetchChannelHtml(): Promise<string> {
+export async function fetchLvivChannelHtml(): Promise<string> {
   const res = await fetch("https://t.me/s/lvivoblenergo", {
     headers: { "User-Agent": "LightChecker-Functions/1.0" },
     signal: AbortSignal.timeout(15000),

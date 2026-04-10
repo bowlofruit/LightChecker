@@ -9,10 +9,27 @@ const REGION_KEYWORDS: Record<string, string> = {
   "Дніпропетровщин": "dnipro",
 };
 
-interface ChannelPost {
+export interface ChannelPost {
   postId: string;
   text: string;
   imageUrls: string[];
+}
+
+const DTEK_CHANNEL = "dtek_ua";
+
+/** Fingerprint for the latest schedule post for a region (same postId → same images). */
+export function fingerprintDtekForRegion(
+  posts: ChannelPost[],
+  targetRegionId: string,
+): string | null {
+  const targetPosts = posts.filter((p) => {
+    if (!/графік|відключен/i.test(p.text)) return false;
+    const regionId = detectRegionFromText(p.text);
+    return regionId === targetRegionId;
+  });
+  if (targetPosts.length === 0) return null;
+  const latest = targetPosts[targetPosts.length - 1];
+  return `${DTEK_CHANNEL}/${latest.postId}`;
 }
 
 /**
@@ -33,11 +50,17 @@ export class DtekTelegramParser implements ScheduleParser {
 
   /** Fetch DTEK channel, find posts for target city, OCR images, return per-queue intervals. */
   async parseChannelAsync(): Promise<Map<string, [number, number][]>> {
-    const html = await fetchChannelHtml();
-    const posts = parseChannelPosts(html);
+    const html = await fetchDtekChannelHtml();
+    const posts = parseDtekChannelPosts(html);
+    return this.parseFromPosts(posts);
+  }
+
+  /** Reuse already-fetched channel HTML (e.g. one fetch for Kyiv/Odesa/Dnipro). */
+  async parseFromPosts(
+    posts: ChannelPost[],
+  ): Promise<Map<string, [number, number][]>> {
     const result = new Map<string, [number, number][]>();
 
-    // Find latest schedule post for target region
     const targetPosts = posts.filter((p) => {
       if (!/графік|відключен/i.test(p.text)) return false;
       const regionId = detectRegionFromText(p.text);
@@ -46,17 +69,13 @@ export class DtekTelegramParser implements ScheduleParser {
 
     if (targetPosts.length === 0) return result;
 
-    // Use the most recent post (last in the list)
     const latest = targetPosts[targetPosts.length - 1];
 
-    // OCR schedule images (skip first image = channel avatar)
     const scheduleImages = latest.imageUrls.filter(
       (url) => !url.includes("user_photo"),
     );
-    // First URL is usually avatar, schedule images are 2nd and 3rd
-    const imagesToOcr = scheduleImages.length > 2
-      ? scheduleImages.slice(1) // skip avatar
-      : scheduleImages;
+    const imagesToOcr =
+      scheduleImages.length > 2 ? scheduleImages.slice(1) : scheduleImages;
 
     for (const url of imagesToOcr) {
       try {
@@ -80,7 +99,7 @@ export class DtekTelegramParser implements ScheduleParser {
 }
 
 /** Fetch t.me/s/dtek_ua public preview page. */
-async function fetchChannelHtml(): Promise<string> {
+export async function fetchDtekChannelHtml(): Promise<string> {
   const res = await fetch("https://t.me/s/dtek_ua", {
     headers: { "User-Agent": "LightChecker-Functions/1.0" },
     signal: AbortSignal.timeout(15000),
@@ -89,7 +108,7 @@ async function fetchChannelHtml(): Promise<string> {
 }
 
 /** Parse channel HTML into structured posts. */
-function parseChannelPosts(html: string): ChannelPost[] {
+export function parseDtekChannelPosts(html: string): ChannelPost[] {
   const posts: ChannelPost[] = [];
   const blocks = html.split("tgme_widget_message_wrap");
 
