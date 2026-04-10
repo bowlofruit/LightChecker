@@ -1,0 +1,45 @@
+name: Update Schedules
+
+on:
+  schedule:
+    # Every hour at minute 5 (UTC) — covers Ukraine peak hours
+    - cron: '5 * * * *'
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: LightChecker/functions/package-lock.json
+
+      - name: Install dependencies
+        working-directory: LightChecker/functions
+        run: npm ci
+
+      - name: Build TypeScript
+        working-directory: LightChecker/functions
+        run: npx tsc
+
+      - name: Write Firebase credentials
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/firebase-sa.json
+
+      - name: Run schedule update
+        working-directory: LightChecker/functions
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-sa.json
+        run: node scripts/populate-firestore.cjs
+
+      - name: Cleanup credentials
+        if: always()
+        run: rm -f /tmp/firebase-sa.json
