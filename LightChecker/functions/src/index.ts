@@ -19,6 +19,7 @@ import {
 } from "./params";
 import { getParser } from "./parsers";
 import { applyScheduleUpdate } from "./schedulePipeline";
+import { updateAllCities } from "./scheduleUpdateAll";
 
 if (!getApps().length) {
   initializeApp();
@@ -68,6 +69,48 @@ export const schedulePollStub = onSchedule(
     } catch (e) {
       logger.error("schedulePollStub_failed", e);
       throw e;
+    }
+  },
+);
+
+/** Multi-city pipeline: fetch all 5 Telegram channels → parse → Firestore → FCM. */
+export const scheduleUpdateAllCities = onSchedule(
+  {
+    schedule: "every 60 minutes",
+    timeZone: "Europe/Kyiv",
+    memory: "1GiB",
+    timeoutSeconds: 300,
+  },
+  async () => {
+    try {
+      const db = getFirestore();
+      const messaging = getMessaging();
+      const results = await updateAllCities(db, messaging);
+      logger.info("all_cities_done", { results });
+    } catch (e) {
+      logger.error("all_cities_failed", e);
+      throw e;
+    }
+  },
+);
+
+/** HTTP trigger for multi-city pipeline: `?key=` must match `HTTP_SCHEDULE_KEY`. */
+export const runAllCitiesHttp = onRequest(
+  { memory: "1GiB", timeoutSeconds: 300 },
+  async (req, res) => {
+    const expected = httpScheduleKey.value();
+    if (!expected || req.query.key !== expected) {
+      res.status(403).send("forbidden");
+      return;
+    }
+    try {
+      const db = getFirestore();
+      const messaging = getMessaging();
+      const results = await updateAllCities(db, messaging);
+      res.status(200).json({ ok: true, results });
+    } catch (e) {
+      logger.error("runAllCitiesHttp", e);
+      res.status(500).json({ ok: false, error: String(e) });
     }
   },
 );
