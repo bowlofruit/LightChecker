@@ -1,11 +1,9 @@
+import { RegexTimeParser } from "./regexTimeParser";
 import { ScheduleParser } from "./types";
 
-/** Stub parser for DTEK oblenergo HTML schedules. To be implemented with real DOM parsing. */
+/** Stub parser for DTEK oblenergo HTML schedules. Falls back to regex. */
 export class DtekHtmlParser implements ScheduleParser {
   parse(data: string | Buffer): [number, number][] {
-    // TODO: Implement actual HTML table parsing for DTEK format
-    // For now, falls back to regex time parser
-    const { RegexTimeParser } = require("./regexTimeParser");
     return new RegexTimeParser().parse(data);
   }
 }

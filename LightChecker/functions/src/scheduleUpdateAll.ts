@@ -7,7 +7,7 @@
 import type { Firestore } from "firebase-admin/firestore";
 import type { Messaging } from "firebase-admin/messaging";
 import * as logger from "firebase-functions/logger";
-import { CherkasyTelegramParser, parseAllQueues as cherkasyParseAll } from "./parsers/cherkasyTelegramParser";
+import { parseAllQueues as cherkasyParseAll } from "./parsers/cherkasyTelegramParser";
 import { DtekTelegramParser } from "./parsers/dtekTelegramParser";
 import { LvivTelegramParser } from "./parsers/lvivTelegramParser";
 import { kyivTodayYyyymmdd } from "./kyivDate";
