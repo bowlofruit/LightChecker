@@ -37,6 +37,15 @@ interface OutageSlotDao {
     )
     suspend fun getSlots(r: String, q: String, d: Long): List<OutageSlotEntity>
 
+    @Query(
+        """
+        SELECT * FROM outage_slots
+        WHERE region_id = :r AND queue_id = :q AND effective_date_yyyymmdd = :d
+        ORDER BY slot_index ASC
+        """,
+    )
+    fun getSlotsSync(r: String, q: String, d: Long): List<OutageSlotEntity>
+
     @Query("DELETE FROM outage_slots WHERE effective_date_yyyymmdd < :cutoff")
     suspend fun deleteOlderThan(cutoff: Long)
 }

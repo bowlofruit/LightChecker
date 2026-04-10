@@ -9,8 +9,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,6 +59,11 @@ fun OnboardingRoute(
         val hint = ui.locationHint ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(hint)
         viewModel.consumeLocationHint()
+    }
+
+    LaunchedEffect(ui.duplicateMessage) {
+        val name = ui.duplicateMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(context.getString(R.string.onboarding_duplicate, name))
     }
 
     Scaffold(
@@ -134,13 +143,19 @@ private fun OnboardingContent(
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(stringResource(R.string.onboarding_subtitle), style = MaterialTheme.typography.bodyLarge)
 
-        TextButton(
+        OutlinedButton(
             onClick = {
                 locationPermissionLauncher.launch(
                     arrayOf(android.Manifest.permission.ACCESS_COARSE_LOCATION),
                 )
             },
+            modifier = Modifier.fillMaxWidth(),
         ) {
+            Icon(
+                Icons.Default.MyLocation,
+                contentDescription = null,
+                modifier = Modifier.padding(end = 8.dp),
+            )
             Text(stringResource(R.string.onboarding_use_location))
         }
 

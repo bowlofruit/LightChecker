@@ -22,6 +22,7 @@
     <string name="onboarding_queue">Черга</string>
     <string name="onboarding_save">Зберегти й відкрити графік</string>
     <string name="onboarding_use_location">Визначити місто за місцезнаходженням</string>
+    <string name="onboarding_duplicate">%1$s вже є у списку</string>
     <string name="onboarding_catalog_error">Не вдалося завантажити довідник міст.</string>
     <string name="onboarding_pick_city_queue">Оберіть місто та чергу.</string>
 
@@ -63,6 +64,9 @@
     <string name="notification_channel_name">Оновлення графіка</string>
     <string name="notification_channel_description">Сповіщення про зміни графіка відключень</string>
     <string name="notification_schedule_updated">Розклад оновлено для %1$s</string>
+
+    <string name="schedule_add_widget">Додати віджет</string>
+    <string name="schedule_set_widget">Відображати на віджеті</string>
 
     <string name="widget_no_place">Додайте місце в застосунку</string>
     <string name="widget_empty_day">Немає даних</string>

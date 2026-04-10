@@ -2,6 +2,7 @@ package com.bowlof.lightchecker.presentation.schedule
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -9,24 +10,28 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material.icons.outlined.AddLocationAlt
 import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -34,16 +39,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import com.bowlof.lightchecker.R
+import com.bowlof.lightchecker.widget.OutageWidgetReceiver
 import com.bowlof.lightchecker.domain.model.OutageInterval
 import com.bowlof.lightchecker.domain.model.SelectedScheduleDay
 import com.bowlof.lightchecker.presentation.util.EmptyStateBox
@@ -89,6 +99,20 @@ fun ScheduleRoute(
                 )
             },
             snackbarHost = { SnackbarHost(snackbarHostState) },
+            floatingActionButton = {
+                val context = LocalContext.current
+                FloatingActionButton(
+                    onClick = {
+                        val appWidgetManager = AppWidgetManager.getInstance(context)
+                        val provider = ComponentName(context, OutageWidgetReceiver::class.java)
+                        if (appWidgetManager.isRequestPinAppWidgetSupported) {
+                            appWidgetManager.requestPinAppWidget(provider, null, null)
+                        }
+                    },
+                ) {
+                    Icon(Icons.Default.Widgets, contentDescription = stringResource(R.string.schedule_add_widget))
+                }
+            },
         ) { padding ->
             Column(
                 modifier = Modifier
@@ -96,26 +120,58 @@ fun ScheduleRoute(
                     .padding(padding),
             ) {
                 if (ui.places.size > 1) {
-                    PrimaryTabRow(selectedTabIndex = ui.selectedTabIndex.coerceIn(0, ui.places.lastIndex)) {
-                        for (index in ui.places.indices) {
-                            val place = ui.places[index]
-                            val tabCd = stringResource(
-                                R.string.schedule_tab_place_cd,
-                                place.cityDisplayName,
-                                place.queueDisplayName,
+                    var placeDropdownExpanded by remember { mutableStateOf(false) }
+                    val safeIndex = ui.selectedTabIndex.coerceIn(0, ui.places.lastIndex)
+                    val selectedPlace = ui.places[safeIndex]
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                    ) {
+                        ExposedDropdownMenuBox(
+                            expanded = placeDropdownExpanded,
+                            onExpandedChange = { placeDropdownExpanded = it },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            OutlinedTextField(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(),
+                                readOnly = true,
+                                value = "${selectedPlace.cityDisplayName} · ${selectedPlace.queueDisplayName}",
+                                onValueChange = {},
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = placeDropdownExpanded) },
+                                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                                singleLine = true,
                             )
-                            Tab(
-                                selected = index == ui.selectedTabIndex,
-                                onClick = { viewModel.selectTab(index) },
-                                text = {
-                                    Text(
-                                        "${place.cityDisplayName}\n${place.queueDisplayName}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        maxLines = 2,
+                            ExposedDropdownMenu(
+                                expanded = placeDropdownExpanded,
+                                onDismissRequest = { placeDropdownExpanded = false },
+                            ) {
+                                ui.places.forEachIndexed { index, place ->
+                                    DropdownMenuItem(
+                                        text = { Text("${place.cityDisplayName} · ${place.queueDisplayName}") },
+                                        onClick = {
+                                            viewModel.selectTab(index)
+                                            placeDropdownExpanded = false
+                                        },
                                     )
-                                },
-                                modifier = Modifier.semantics(mergeDescendants = true) {
-                                    contentDescription = tabCd
+                                }
+                            }
+                        }
+                        IconButton(
+                            onClick = { viewModel.setWidgetPrimary(selectedPlace.id) },
+                            enabled = !selectedPlace.isWidgetPrimary,
+                        ) {
+                            Icon(
+                                Icons.Default.Widgets,
+                                contentDescription = stringResource(R.string.schedule_set_widget),
+                                tint = if (selectedPlace.isWidgetPrimary) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                                 },
                             )
                         }

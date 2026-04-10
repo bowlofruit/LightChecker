@@ -13,6 +13,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,6 +25,7 @@ data class OnboardingUiState(
     val selectedQueueIndex: Int = 0,
     val isSaving: Boolean = false,
     val locationHint: String? = null,
+    val duplicateMessage: String? = null,
 )
 
 @HiltViewModel
@@ -94,7 +96,22 @@ class OnboardingViewModel @Inject constructor(
         val city = state.catalog.getOrNull(state.selectedCityIndex) ?: return
         val queue = city.queues.getOrNull(state.selectedQueueIndex) ?: return
         viewModelScope.launch {
-            _ui.update { it.copy(isSaving = true) }
+            _ui.update { it.copy(isSaving = true, duplicateMessage = null) }
+
+            // Check for duplicate
+            val existing = locationsRepository.observeSavedPlaces().first()
+            val isDuplicate = existing.any { it.regionId == queue.regionId && it.queueId == queue.queueId }
+            if (isDuplicate) {
+                _ui.update {
+                    it.copy(
+                        isSaving = false,
+                        duplicateMessage = "${city.displayName} · ${queue.displayName}",
+                    )
+                }
+                onDone()
+                return@launch
+            }
+
             runCatching {
                 locationsRepository.addPlace(
                     regionId = queue.regionId,

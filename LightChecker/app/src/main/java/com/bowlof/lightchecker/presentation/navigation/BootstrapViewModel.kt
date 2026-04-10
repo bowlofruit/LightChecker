@@ -19,6 +19,6 @@ class BootstrapViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = NavRoutes.ONBOARDING,
+            initialValue = null,
         )
 }

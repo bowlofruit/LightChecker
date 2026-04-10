@@ -20,6 +20,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -47,7 +48,7 @@ data class ScheduleUiState(
 @HiltViewModel
 class ScheduleViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
-    locationsRepository: LocationsRepository,
+    private val locationsRepository: LocationsRepository,
     private val scheduleRepository: ScheduleRepository,
     private val getDayScheduleForPlaceUseCase: GetDayScheduleForPlaceUseCase,
 ) : ViewModel() {
@@ -55,6 +56,15 @@ class ScheduleViewModel @Inject constructor(
     private val _selectedTabIndex = MutableStateFlow(0)
     private val _selectedDay = MutableStateFlow(SelectedScheduleDay.Today)
     private val _isRefreshing = MutableStateFlow(false)
+
+    init {
+        // Auto-refresh all saved places on first open
+        viewModelScope.launch {
+            locationsRepository.observeSavedPlaces().first().forEach { place ->
+                runCatching { scheduleRepository.refreshSchedule(place.regionId, place.queueId) }
+            }
+        }
+    }
 
     val selectedDay = _selectedDay.asStateFlow()
 
@@ -132,6 +142,12 @@ class ScheduleViewModel @Inject constructor(
         val places = uiState.value.places
         val index = places.indexOfFirst { it.regionId == regionId && it.queueId == queueId }
         if (index >= 0) _selectedTabIndex.update { index }
+    }
+
+    fun setWidgetPrimary(id: Long) {
+        viewModelScope.launch {
+            locationsRepository.setWidgetPrimary(id)
+        }
     }
 
     fun selectDay(day: SelectedScheduleDay) {
