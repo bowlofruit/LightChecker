@@ -10,6 +10,7 @@
  */
 
 const admin = require("firebase-admin");
+const { fcmTopicForRegionQueue } = require("../lib/topicName");
 const { parseAllQueues } = require("../lib/parsers/cherkasyTelegramParser");
 const { DtekTelegramParser } = require("../lib/parsers/dtekTelegramParser");
 const { LvivTelegramParser } = require("../lib/parsers/lvivTelegramParser");
@@ -58,6 +59,17 @@ async function writeSchedule(regionId, queueId, day, intervals) {
     s: flat,
     g: Date.now(),
   });
+
+  // Send FCM push to trigger background sync on devices
+  const topic = fcmTopicForRegionQueue(regionId, queueId);
+  try {
+    await admin.messaging().send({
+      topic,
+      data: { r: regionId, q: queueId, v: String(version), d: String(day) },
+    });
+  } catch (e) {
+    // FCM may fail if no subscribers — not critical
+  }
 
   return { skipped: false, docId, version, slots: flat.length / 2 };
 }
