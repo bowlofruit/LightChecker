@@ -10,7 +10,6 @@
  *
  * Usage:
  *   node functions/scripts/populate-firestore.cjs
- *   node functions/scripts/populate-firestore.cjs --force-lviv   # ігнорувати fingerprint, знову OCR Львова
  */
 
 const admin = require("firebase-admin");
@@ -179,18 +178,14 @@ async function processDtekRegions(day, prevFp) {
   }
 }
 
-async function processLviv(day, prevFp, options = {}) {
-  const force = Boolean(options.forceLviv);
+async function processLviv(day, prevFp) {
   console.log("\n=== Львів ===");
   try {
     const html = await fetchLvivChannelHtml();
     const fp = lvivCandidatesFingerprint(html);
-    if (!force && fp && prevFp.lviv === fp) {
+    if (fp && prevFp.lviv === fp) {
       console.log("  Той самий набір верхніх кандидат-постів, пропуск OCR");
       return;
-    }
-    if (force && fp && prevFp.lviv === fp) {
-      console.log("  --force-lviv: пересканування OCR попри той самий fingerprint");
     }
 
     const nCand = collectLvivScheduleCandidates(html).length;
@@ -225,17 +220,15 @@ async function processLviv(day, prevFp, options = {}) {
 }
 
 async function main() {
-  const forceLviv = process.argv.includes("--force-lviv");
   const day = kyivTodayYyyymmdd();
   console.log("Date:", day, "(Kyiv time)");
   console.log("Project: lightchecker-ebe94");
-  if (forceLviv) console.log("Args: --force-lviv");
 
   const prevFp = await loadSourceFingerprints();
 
   await processCherkasy(day, prevFp);
   await processDtekRegions(day, prevFp);
-  await processLviv(day, prevFp, { forceLviv });
+  await processLviv(day, prevFp);
 
   console.log("\nDone! Check Firestore: https://console.firebase.google.com/project/lightchecker-ebe94/firestore");
   process.exit(0);
