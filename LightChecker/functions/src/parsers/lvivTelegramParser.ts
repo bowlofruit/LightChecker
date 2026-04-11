@@ -115,7 +115,7 @@ async function ocrImage(raw: Buffer): Promise<string> {
  *   "з 11:30 по 14:00      з 20:00 по 22:00"
  *   (optional extra time line for queues with multiple intervals)
  */
-function parseLvivScheduleText(
+export function parseLvivScheduleText(
   text: string,
 ): Map<string, [number, number][]> {
   const result = new Map<string, [number, number][]>();
@@ -139,12 +139,12 @@ function parseLvivScheduleText(
       continue;
     }
 
-    // Skip "Електроенергії немає" lines
-    if (/електроенерг/i.test(line)) continue;
-
-    // Time line — assign to current queues by position
+    // Рядок статусу без годин — лише контекст для OCR, інтервалів немає
     const timeRanges = extractTimeRanges(line);
-    if (timeRanges.length > 0 && currentQueues.length > 0) {
+    if (timeRanges.length === 0) continue;
+
+    // Time line (може бути разом із «Електроенергія є / немає») — колонки по позиції в рядку
+    if (currentQueues.length > 0) {
       if (currentQueues.length >= 2 && timeRanges.length >= 2) {
         // 2 queues, 2+ ranges — split by position
         assignByPosition(line, currentQueues, result);
@@ -227,8 +227,9 @@ function assignByPosition(
     const endMin = parseInt(m[3]) * 60 + parseInt(m[4]);
     if (startMin >= endMin || endMin > 1440) continue;
 
+    const matchCenter = m.index + m[0].length / 2;
     const segmentIdx = Math.min(
-      Math.floor(m.index / segmentWidth),
+      Math.floor(matchCenter / segmentWidth),
       queueIds.length - 1,
     );
     const queueId = queueIds[segmentIdx];
