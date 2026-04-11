@@ -22,6 +22,11 @@ interface SyncMetaDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: SyncMetaEntity)
 
+    @Query(
+        "DELETE FROM sync_meta WHERE region_id = :r AND queue_id = :q AND effective_date_yyyymmdd = :d",
+    )
+    suspend fun deleteForDay(r: String, q: String, d: Long)
+
     @Query("DELETE FROM sync_meta WHERE effective_date_yyyymmdd < :cutoff")
     suspend fun deleteOlderThan(cutoff: Long)
 }

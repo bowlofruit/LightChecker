@@ -11,12 +11,12 @@ class FirestoreScheduleDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
 ) {
 
-    suspend fun fetchSchedule(documentId: String): FirestoreScheduleDto? {
+    suspend fun fetchSchedules(documentId: String): List<FirestoreScheduleDto> {
         val snap = firestore.collection(COLLECTION_SCHEDULES)
             .document(documentId)
             .get()
             .await()
-        return snap.toFirestoreScheduleDtoOrNull()
+        return snap.toFirestoreScheduleDtosOrEmpty()
     }
 
     companion object {

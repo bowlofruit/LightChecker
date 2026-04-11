@@ -13,7 +13,6 @@
  */
 
 const admin = require("firebase-admin");
-const { fcmTopicForRegionQueue } = require("../lib/topicName");
 const { parseAllQueues } = require("../lib/parsers/cherkasyTelegramParser");
 const {
   DtekTelegramParser,
@@ -22,14 +21,18 @@ const {
   fetchDtekChannelHtml,
 } = require("../lib/parsers/dtekTelegramParser");
 const {
+  collectLvivScheduleCandidates,
+  lvivCandidatesFingerprint,
+} = require("../lib/lvivTelegramCandidates");
+const {
   LvivTelegramParser,
-  lvivSchedulePostFingerprint,
   fetchLvivChannelHtml,
 } = require("../lib/parsers/lvivTelegramParser");
 const { cherkasySchedulePostFingerprint } = require("../lib/telegramSourceFingerprints");
 const { firestoreDocumentId } = require("../lib/documentId");
 const { normalizeIntervalPairs, pairsToFlatMinutes } = require("../lib/normalizeIntervals");
 const { kyivTodayYyyymmdd } = require("../lib/kyivDate");
+const { applyScheduleDayWrite } = require("../lib/multiDayScheduleWrite");
 
 const META_COLLECTION = "populate_meta";
 const META_DOC_ID = "telegram_sources";
@@ -61,43 +64,25 @@ async function writeSchedule(regionId, queueId, day, intervals) {
   const normalized = normalizeIntervalPairs(intervals);
   const flat = pairsToFlatMinutes(normalized);
 
-  const docRef = db.collection("schedules").doc(docId);
-  const prev = await docRef.get();
-  const prevData = prev.exists ? prev.data() : null;
+  const result = await applyScheduleDayWrite(
+    db,
+    admin.messaging(),
+    regionId,
+    queueId,
+    day,
+    flat,
+    new Date(),
+  );
 
-  // Version management
-  let version = 1;
-  if (prevData) {
-    const prevFlat = JSON.stringify(prevData.s || []);
-    const nextFlat = JSON.stringify(flat);
-    if (prevData.d === day && prevFlat === nextFlat) {
-      return { skipped: true, docId };
-    }
-    if (prevData.d === day) {
-      version = (prevData.v || 0) + 1;
-    }
+  if (result.skipped) {
+    return { skipped: true, docId, version: undefined, slots: flat.length / 2 };
   }
-
-  await docRef.set({
-    f: 1,
-    v: version,
-    d: day,
-    s: flat,
-    g: Date.now(),
-  });
-
-  // Send FCM push to trigger background sync on devices
-  const topic = fcmTopicForRegionQueue(regionId, queueId);
-  try {
-    await admin.messaging().send({
-      topic,
-      data: { r: regionId, q: queueId, v: String(version), d: String(day) },
-    });
-  } catch (e) {
-    // FCM may fail if no subscribers — not critical
-  }
-
-  return { skipped: false, docId, version, slots: flat.length / 2 };
+  return {
+    skipped: false,
+    docId,
+    version: result.version,
+    slots: flat.length / 2,
+  };
 }
 
 async function processCherkasy(day, prevFp) {
@@ -197,17 +182,24 @@ async function processLviv(day, prevFp) {
   console.log("\n=== Львів ===");
   try {
     const html = await fetchLvivChannelHtml();
-    const fp = lvivSchedulePostFingerprint(html);
+    const fp = lvivCandidatesFingerprint(html);
     if (fp && prevFp.lviv === fp) {
-      console.log("  Той самий пост (data-post), пропуск OCR");
+      console.log("  Той самий набір верхніх кандидат-постів, пропуск OCR");
       return;
     }
 
+    const nCand = collectLvivScheduleCandidates(html).length;
+    console.log(`  Кандидат-пости (до 5, від новішого): ${nCand}`);
+
     const parser = new LvivTelegramParser();
-    const { scheduleDayYyyymmdd, queues } = await parser.parseFromHtml(html);
+    const { scheduleDayYyyymmdd, queues, usedPostId } = await parser.parseFromHtml(html);
     if (queues.size === 0) {
-      console.log("  No data found");
+      console.log("  No data for today/tomorrow in scanned posts (or OCR miss)");
       return;
+    }
+
+    if (usedPostId) {
+      console.log(`  Прийнято графік з поста ${usedPostId} (дата в вікні Kyiv)`);
     }
 
     const dayForLviv = scheduleDayYyyymmdd ?? day;

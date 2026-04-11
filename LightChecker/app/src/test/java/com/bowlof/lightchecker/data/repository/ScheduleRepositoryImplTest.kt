@@ -42,14 +42,13 @@ class ScheduleRepositoryImplTest {
     }
 
     @Test
-    fun `sequential refresh for today then tomorrow keeps both days in db`() = runTest {
+    fun `single refresh with today and tomorrow keeps both days in db`() = runTest {
         val today = KyivTime.todayYyyymmdd()
         val tomorrow = KyivTime.tomorrowYyyymmdd()
-        coEvery { remote.fetchSchedule(any()) } returnsMany listOf(
+        coEvery { remote.fetchSchedules(any()) } returns listOf(
             FirestoreScheduleDto(1, 1L, today, listOf(0, 60), null),
             FirestoreScheduleDto(1, 1L, tomorrow, listOf(120, 180), null),
         )
-        repo.refreshSchedule("reg1", "q1")
         repo.refreshSchedule("reg1", "q1")
         assertEquals(1, db.outageSlotDao().getSlots("reg1", "q1", today).size)
         assertEquals(1, db.outageSlotDao().getSlots("reg1", "q1", tomorrow).size)
@@ -58,9 +57,9 @@ class ScheduleRepositoryImplTest {
     @Test
     fun `second refresh same day replaces slots`() = runTest {
         val today = KyivTime.todayYyyymmdd()
-        coEvery { remote.fetchSchedule(any()) } returnsMany listOf(
-            FirestoreScheduleDto(1, 1L, today, listOf(0, 60), null),
-            FirestoreScheduleDto(1, 2L, today, listOf(300, 360), null),
+        coEvery { remote.fetchSchedules(any()) } returnsMany listOf(
+            listOf(FirestoreScheduleDto(1, 1L, today, listOf(0, 60), null)),
+            listOf(FirestoreScheduleDto(1, 2L, today, listOf(300, 360), null)),
         )
         repo.refreshSchedule("reg1", "q1")
         repo.refreshSchedule("reg1", "q1")
@@ -73,13 +72,13 @@ class ScheduleRepositoryImplTest {
     @Test
     fun `syncIfNewerVersion skips fetch when meta version matches`() = runTest {
         val today = KyivTime.todayYyyymmdd()
-        coEvery { remote.fetchSchedule(any()) } returns
-            FirestoreScheduleDto(1, 5L, today, listOf(0, 30), null)
+        coEvery { remote.fetchSchedules(any()) } returns
+            listOf(FirestoreScheduleDto(1, 5L, today, listOf(0, 30), null))
         repo.refreshSchedule("r", "q")
-        coEvery { remote.fetchSchedule(any()) } returns
-            FirestoreScheduleDto(1, 99L, today, listOf(30, 60), null)
+        coEvery { remote.fetchSchedules(any()) } returns
+            listOf(FirestoreScheduleDto(1, 99L, today, listOf(30, 60), null))
         repo.syncIfNewerVersion("r", "q", 5L, today)
         assertEquals(0, db.outageSlotDao().getSlots("r", "q", today).first().startMinute)
-        coVerify(exactly = 1) { remote.fetchSchedule(any()) }
+        coVerify(exactly = 1) { remote.fetchSchedules(any()) }
     }
 }

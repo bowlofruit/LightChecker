@@ -2,6 +2,9 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { applyScheduleUpdate } = require("../lib/schedulePipeline.js");
 
+/** Фіксований момент: 23 березня 2026 у календарі Europe/Kyiv (завтра = 24-е). */
+const NOW_KYIV_MAR23 = new Date("2026-03-23T15:00:00+02:00");
+
 function createMockFirestore() {
   const store = Object.create(null);
   return {
@@ -35,21 +38,28 @@ function createMockMessaging(sent) {
   };
 }
 
-test("first write sets v=1 and sends FCM", async () => {
+test("first write sets v=1 and sends FCM (f=2 days)", async () => {
   const db = createMockFirestore();
   const sent = [];
   const messaging = createMockMessaging(sent);
-  const r = await applyScheduleUpdate(db, messaging, "kyiv", "1", 20260323, [
-    [480, 600],
-  ]);
+  const r = await applyScheduleUpdate(
+    db,
+    messaging,
+    "kyiv",
+    "1",
+    20260323,
+    [[480, 600]],
+    NOW_KYIV_MAR23,
+  );
   assert.equal(r.skipped, false);
   assert.equal(sent.length, 1);
   assert.equal(sent[0].topic, "lc_kyiv_1");
   assert.equal(sent[0].data.v, "1");
   assert.equal(sent[0].data.d, "20260323");
   const doc = db._peek("schedules/kyiv__1");
-  assert.equal(doc.v, 1);
-  assert.deepEqual(doc.s, [480, 600]);
+  assert.equal(doc.f, 2);
+  assert.equal(doc.days["20260323"].v, 1);
+  assert.deepEqual(doc.days["20260323"].s, [480, 600]);
 });
 
 test("unchanged payload skips FCM", async () => {
@@ -60,10 +70,18 @@ test("unchanged payload skips FCM", async () => {
     [0, 60],
     [120, 180],
   ];
-  await applyScheduleUpdate(db, messaging, "r", "q", 20260323, pairs);
-  await applyScheduleUpdate(db, messaging, "r", "q", 20260323, pairs);
+  await applyScheduleUpdate(db, messaging, "r", "q", 20260323, pairs, NOW_KYIV_MAR23);
+  await applyScheduleUpdate(db, messaging, "r", "q", 20260323, pairs, NOW_KYIV_MAR23);
   assert.equal(sent.length, 1);
-  const r = await applyScheduleUpdate(db, messaging, "r", "q", 20260323, pairs);
+  const r = await applyScheduleUpdate(
+    db,
+    messaging,
+    "r",
+    "q",
+    20260323,
+    pairs,
+    NOW_KYIV_MAR23,
+  );
   assert.equal(r.skipped, true);
 });
 
@@ -71,21 +89,24 @@ test("same day changed slots bumps v", async () => {
   const db = createMockFirestore();
   const sent = [];
   const messaging = createMockMessaging(sent);
-  await applyScheduleUpdate(db, messaging, "r", "q", 20260323, [[0, 60]]);
-  await applyScheduleUpdate(db, messaging, "r", "q", 20260323, [[0, 30]]);
+  await applyScheduleUpdate(db, messaging, "r", "q", 20260323, [[0, 60]], NOW_KYIV_MAR23);
+  await applyScheduleUpdate(db, messaging, "r", "q", 20260323, [[0, 30]], NOW_KYIV_MAR23);
   assert.equal(sent.length, 2);
   const doc = db._peek("schedules/r__q");
-  assert.equal(doc.v, 2);
-  assert.deepEqual(doc.s, [0, 30]);
+  assert.equal(doc.days["20260323"].v, 2);
+  assert.deepEqual(doc.days["20260323"].s, [0, 30]);
 });
 
-test("new calendar day resets v to 1", async () => {
+test("second calendar day adds second key; v resets for new day", async () => {
   const db = createMockFirestore();
   const sent = [];
   const messaging = createMockMessaging(sent);
-  await applyScheduleUpdate(db, messaging, "r", "q", 20260323, [[10, 20]]);
-  await applyScheduleUpdate(db, messaging, "r", "q", 20260324, [[10, 20]]);
+  await applyScheduleUpdate(db, messaging, "r", "q", 20260323, [[10, 20]], NOW_KYIV_MAR23);
+  await applyScheduleUpdate(db, messaging, "r", "q", 20260324, [[10, 20]], NOW_KYIV_MAR23);
   const doc = db._peek("schedules/r__q");
-  assert.equal(doc.d, 20260324);
-  assert.equal(doc.v, 1);
+  assert.equal(doc.f, 2);
+  assert.equal(doc.days["20260323"].v, 1);
+  assert.equal(doc.days["20260324"].v, 1);
+  assert.ok(doc.days["20260323"]);
+  assert.ok(doc.days["20260324"]);
 });

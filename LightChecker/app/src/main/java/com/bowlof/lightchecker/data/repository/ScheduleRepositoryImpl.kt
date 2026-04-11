@@ -10,6 +10,7 @@ import com.bowlof.lightchecker.data.local.db.SyncEventEntity
 import com.bowlof.lightchecker.data.local.db.SyncHistoryEntity
 import com.bowlof.lightchecker.data.local.db.SyncMetaEntity
 import com.bowlof.lightchecker.data.remote.FirestoreScheduleDataSource
+import com.bowlof.lightchecker.data.remote.dto.FirestoreScheduleDto
 import com.bowlof.lightchecker.domain.ids.ScheduleDocumentIds
 import com.bowlof.lightchecker.domain.model.DaySchedule
 import com.bowlof.lightchecker.domain.model.OutageInterval
@@ -70,19 +71,89 @@ class ScheduleRepositoryImpl @Inject constructor(
 
     override suspend fun refreshSchedule(regionId: String, queueId: String) {
         val docId = ScheduleDocumentIds.firestoreDocumentId(regionId, queueId)
-        val dto = try {
-            remote.fetchSchedule(docId)
+        val dtos = try {
+            remote.fetchSchedules(docId)
         } catch (e: FirebaseFirestoreException) {
             Timber.w(e, "firestore fetch")
             throw SyncException.Unknown(e)
         } catch (e: Exception) {
             Timber.w(e, "firestore fetch")
             throw SyncException.Network(e)
-        } ?: return
+        }
+        if (dtos.isEmpty()) return
 
-        ValidateSchedulePayload.validate(dto.f, dto.v, dto.d, dto.s).getOrThrow()
+        val today = KyivTime.todayYyyymmdd()
+        val tomorrow = KyivTime.tomorrowYyyymmdd()
+        val window = setOf(today, tomorrow)
+        val syncedDays = dtos.map { it.d }.toSet()
 
-        val slots = buildList {
+        val oldMetas = dtos.associate { dto ->
+            dto.d to syncDao.get(regionId, queueId, dto.d)
+        }
+
+        for (dto in dtos) {
+            ValidateSchedulePayload.validate(dto.f, dto.v, dto.d, dto.s).getOrThrow()
+        }
+
+        database.withTransaction {
+            for (d in window) {
+                if (d !in syncedDays) {
+                    outageDao.deleteForDay(regionId, queueId, d)
+                    syncDao.deleteForDay(regionId, queueId, d)
+                }
+            }
+            for (dto in dtos) {
+                val slots = slotsFromDto(regionId, queueId, dto)
+                val meta = SyncMetaEntity(
+                    regionId = regionId,
+                    queueId = queueId,
+                    effectiveDateYyyymmdd = dto.d,
+                    cachedVersion = dto.v,
+                    lastSyncSuccessAtEpochMillis = System.currentTimeMillis(),
+                )
+                outageDao.deleteForDay(regionId, queueId, dto.d)
+                if (slots.isNotEmpty()) {
+                    outageDao.insertAll(slots)
+                }
+                syncDao.upsert(meta)
+            }
+        }
+
+        for (dto in dtos) {
+            historyDao.insert(
+                SyncHistoryEntity(
+                    regionId = regionId,
+                    queueId = queueId,
+                    dateYyyymmdd = dto.d,
+                    oldVersion = oldMetas[dto.d]?.cachedVersion,
+                    newVersion = dto.v,
+                    syncedAtEpochMillis = System.currentTimeMillis(),
+                ),
+            )
+            eventDao.insert(
+                SyncEventEntity(
+                    timestampMillis = System.currentTimeMillis(),
+                    eventType = "SYNC_SUCCESS",
+                    regionId = regionId,
+                    queueId = queueId,
+                    details = "v=${dto.v} day=${dto.d}",
+                ),
+            )
+        }
+        historyDao.pruneOldEntries()
+        eventDao.pruneOldEntries()
+
+        purgeStaleCache()
+        runCatching { OutageGlanceAppWidget().updateAll(context) }
+            .onFailure { Timber.w(it, "glance update") }
+    }
+
+    private fun slotsFromDto(
+        regionId: String,
+        queueId: String,
+        dto: FirestoreScheduleDto,
+    ): List<OutageSlotEntity> {
+        return buildList {
             var pairIndex = 0
             var i = 0
             while (i + 1 < dto.s.size) {
@@ -100,51 +171,6 @@ class ScheduleRepositoryImpl @Inject constructor(
                 i += 2
             }
         }
-
-        val meta = SyncMetaEntity(
-            regionId = regionId,
-            queueId = queueId,
-            effectiveDateYyyymmdd = dto.d,
-            cachedVersion = dto.v,
-            lastSyncSuccessAtEpochMillis = System.currentTimeMillis(),
-        )
-
-        val oldMeta = syncDao.get(regionId, queueId, dto.d)
-
-        database.withTransaction {
-            outageDao.deleteForDay(regionId, queueId, dto.d)
-            if (slots.isNotEmpty()) {
-                outageDao.insertAll(slots)
-            }
-            syncDao.upsert(meta)
-        }
-
-        historyDao.insert(
-            SyncHistoryEntity(
-                regionId = regionId,
-                queueId = queueId,
-                dateYyyymmdd = dto.d,
-                oldVersion = oldMeta?.cachedVersion,
-                newVersion = dto.v,
-                syncedAtEpochMillis = System.currentTimeMillis(),
-            ),
-        )
-        historyDao.pruneOldEntries()
-
-        eventDao.insert(
-            SyncEventEntity(
-                timestampMillis = System.currentTimeMillis(),
-                eventType = "SYNC_SUCCESS",
-                regionId = regionId,
-                queueId = queueId,
-                details = "v=${dto.v} day=${dto.d}",
-            ),
-        )
-        eventDao.pruneOldEntries()
-
-        purgeStaleCache()
-        runCatching { OutageGlanceAppWidget().updateAll(context) }
-            .onFailure { Timber.w(it, "glance update") }
     }
 
     override suspend fun syncIfNewerVersion(

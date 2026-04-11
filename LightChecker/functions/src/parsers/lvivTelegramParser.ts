@@ -1,50 +1,25 @@
 import sharp from "sharp";
 import Tesseract from "tesseract.js";
+import { kyivTodayYyyymmdd, kyivTomorrowYyyymmdd } from "../kyivDate";
 import { extractLvivScheduleDayYyyymmdd } from "../lvivGraphicDate";
+import { collectLvivScheduleCandidates } from "../lvivTelegramCandidates";
 import { ScheduleParser } from "./types";
 
 /** Результат парсингу Львова: черги + дата з картинки (ДД.ММ), якщо OCR її знайшов. */
 export type LvivScheduleParseResult = {
   scheduleDayYyyymmdd: number | null;
   queues: Map<string, [number, number][]>;
+  /** Який пост дав прийнятий графік (для логів). */
+  usedPostId?: string;
 };
 
 export { extractLvivScheduleDayYyyymmdd } from "../lvivGraphicDate";
-
-const LVIV_CHANNEL = "lvivoblenergo";
-
-/**
- * Fingerprint of the latest image-only schedule post (same post → same picture).
- */
-export function lvivSchedulePostFingerprint(html: string): string | null {
-  const blocks = html.split("tgme_widget_message_wrap");
-  let latest: string | null = null;
-
-  for (const block of blocks) {
-    const postMatch = block.match(
-      new RegExp(`data-post="${LVIV_CHANNEL}/(\\d+)"`),
-    );
-    if (!postMatch) continue;
-
-    const textMatch = block.match(
-      /tgme_widget_message_text[^>]*>([\s\S]*?)<\/div>/,
-    );
-    const text = textMatch
-      ? textMatch[1].replace(/<[^>]+>/g, "").trim()
-      : "";
-    if (text.length > 10) continue;
-
-    const imgRe = /https:\/\/cdn[^"'\s)]+\.(?:jpg|jpeg|png|webp)/gi;
-    let im: RegExpExecArray | null;
-    while ((im = imgRe.exec(block)) !== null) {
-      if (!im[0].includes("emoji") && !im[0].includes("user_photo")) {
-        latest = `${LVIV_CHANNEL}/${postMatch[1]}`;
-      }
-    }
-  }
-
-  return latest;
-}
+export {
+  collectLvivScheduleCandidates,
+  lvivCandidatesFingerprint,
+  LVIV_MAX_SCHEDULE_CANDIDATES,
+} from "../lvivTelegramCandidates";
+export type { LvivScheduleCandidate } from "../lvivTelegramCandidates";
 
 /**
  * Parser for Львівобленерго Telegram channel (t.me/lvivoblenergo).
@@ -65,17 +40,40 @@ export class LvivTelegramParser implements ScheduleParser {
     return this.parseFromHtml(html);
   }
 
-  async parseFromHtml(html: string): Promise<LvivScheduleParseResult> {
-    const imageUrl = findLatestScheduleImage(html);
-    if (!imageUrl) {
+  /**
+   * OCR від новішого поста: перший графік, у якого дата з картинки — сьогодні або завтра (Kyiv).
+   */
+  async parseFromHtml(
+    html: string,
+    now: Date = new Date(),
+  ): Promise<LvivScheduleParseResult> {
+    const todayN = kyivTodayYyyymmdd(now);
+    const tomorrowN = kyivTomorrowYyyymmdd(now);
+    const allowed = new Set([String(todayN), String(tomorrowN)]);
+
+    const candidates = collectLvivScheduleCandidates(html);
+    if (candidates.length === 0) {
       return { scheduleDayYyyymmdd: null, queues: new Map() };
     }
 
-    const raw = await fetchImage(imageUrl);
-    const text = await ocrImage(raw);
-    const scheduleDayYyyymmdd = extractLvivScheduleDayYyyymmdd(text);
-    const queues = parseLvivScheduleText(text);
-    return { scheduleDayYyyymmdd, queues };
+    for (const { postId, imageUrl } of candidates) {
+      try {
+        const raw = await fetchImage(imageUrl);
+        const text = await ocrImage(raw);
+        const scheduleDayYyyymmdd = extractLvivScheduleDayYyyymmdd(text, now);
+        if (scheduleDayYyyymmdd == null) continue;
+        if (!allowed.has(String(scheduleDayYyyymmdd))) continue;
+
+        const queues = parseLvivScheduleText(text);
+        if (queues.size === 0) continue;
+
+        return { scheduleDayYyyymmdd, queues, usedPostId: postId };
+      } catch {
+        // наступний кандидат
+      }
+    }
+
+    return { scheduleDayYyyymmdd: null, queues: new Map() };
   }
 }
 
@@ -85,32 +83,6 @@ export async function fetchLvivChannelHtml(): Promise<string> {
     signal: AbortSignal.timeout(15000),
   });
   return res.text();
-}
-
-function findLatestScheduleImage(html: string): string | null {
-  const blocks = html.split("tgme_widget_message_wrap");
-  let latestImgUrl: string | null = null;
-
-  for (const block of blocks) {
-    if (!block.includes("data-post=")) continue;
-    const textMatch = block.match(
-      /tgme_widget_message_text[^>]*>([\s\S]*?)<\/div>/,
-    );
-    const text = textMatch
-      ? textMatch[1].replace(/<[^>]+>/g, "").trim()
-      : "";
-    if (text.length > 10) continue;
-
-    const imgRe = /https:\/\/cdn[^"'\s)]+\.(?:jpg|jpeg|png|webp)/gi;
-    let im: RegExpExecArray | null;
-    while ((im = imgRe.exec(block)) !== null) {
-      if (!im[0].includes("emoji") && !im[0].includes("user_photo")) {
-        latestImgUrl = im[0];
-      }
-    }
-  }
-
-  return latestImgUrl;
 }
 
 async function fetchImage(url: string): Promise<Buffer> {
