@@ -4,7 +4,13 @@ on:
   schedule:
     # Every hour at minute 5 (UTC) — covers Ukraine peak hours
     - cron: '5 * * * *'
-  workflow_dispatch: # Manual trigger
+  workflow_dispatch:
+    inputs:
+      force_lviv:
+        description: Пересканувати Львів (OCR), навіть якщо пости не змінились
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   update:
@@ -35,7 +41,12 @@ jobs:
         working-directory: functions
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/firebase-sa.json
-        run: node scripts/populate-firestore.cjs
+        run: |
+          ARGS=()
+          if [ "${{ github.event.inputs.force_lviv }}" = "true" ]; then
+            ARGS+=(--force-lviv)
+          fi
+          node scripts/populate-firestore.cjs "${ARGS[@]}"
 
       - name: Cleanup credentials
         if: always()
