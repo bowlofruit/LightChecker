@@ -7,6 +7,7 @@
 import type { Firestore } from "firebase-admin/firestore";
 import type { Messaging } from "firebase-admin/messaging";
 import * as logger from "firebase-functions/logger";
+import { pickCherkasyScheduleMessage } from "./cherkasyPostDate";
 import { parseAllQueues as cherkasyParseAll } from "./parsers/cherkasyTelegramParser";
 import { DtekTelegramParser } from "./parsers/dtekTelegramParser";
 import { LvivTelegramParser } from "./parsers/lvivTelegramParser";
@@ -80,13 +81,17 @@ async function processCherkasy(
       messages.push(text);
     }
 
-    // Find latest schedule message
-    const scheduleMsg = messages
-      .filter((msg) => /\d+\.\d+\s+\d{1,2}:\d{2}/.test(msg))
-      .pop();
-
-    if (!scheduleMsg) {
+    const picked = pickCherkasyScheduleMessage(messages);
+    if (!picked) {
       return { regionId: "cherkasy", queuesUpdated: 0, queuesSkipped: 0, error: "no schedule found" };
+    }
+
+    const { text: scheduleMsg, dayYyyymmdd: dayForCherkasy } = picked;
+    if (dayForCherkasy !== day) {
+      logger.info("cherkasy_schedule_day_from_post", {
+        postDay: dayForCherkasy,
+        kyivToday: day,
+      });
     }
 
     const allQueues = cherkasyParseAll(scheduleMsg);
@@ -94,7 +99,14 @@ async function processCherkasy(
     let skipped = 0;
 
     for (const [queueId, intervals] of allQueues) {
-      const result = await applyScheduleUpdate(db, messaging, "cherkasy", queueId, day, intervals);
+      const result = await applyScheduleUpdate(
+        db,
+        messaging,
+        "cherkasy",
+        queueId,
+        dayForCherkasy,
+        intervals,
+      );
       if (result.skipped) skipped++;
       else updated++;
     }

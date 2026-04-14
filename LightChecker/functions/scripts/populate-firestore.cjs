@@ -28,6 +28,7 @@ const {
   LvivTelegramParser,
   fetchLvivChannelHtml,
 } = require("../lib/parsers/lvivTelegramParser");
+const { pickCherkasyScheduleMessage } = require("../lib/cherkasyPostDate");
 const { cherkasySchedulePostFingerprint } = require("../lib/telegramSourceFingerprints");
 const { firestoreDocumentId } = require("../lib/documentId");
 const { normalizeIntervalPairs, pairsToFlatMinutes } = require("../lib/normalizeIntervals");
@@ -109,17 +110,22 @@ async function processCherkasy(day, prevFp) {
       );
     }
 
-    const scheduleMsg = messages.filter((msg) => /\d+\.\d+\s+\d{1,2}:\d{2}/.test(msg)).pop();
-    if (!scheduleMsg) {
+    const picked = pickCherkasyScheduleMessage(messages);
+    if (!picked) {
       console.log("  No schedule found");
       return;
+    }
+
+    const { text: scheduleMsg, dayYyyymmdd: dayForCherkasy } = picked;
+    if (dayForCherkasy !== day) {
+      console.log(`  Дата з поста: ${dayForCherkasy} (Kyiv today: ${day})`);
     }
 
     const allQueues = parseAllQueues(scheduleMsg);
     if (allQueues.size === 0) return;
 
     for (const [queueId, intervals] of allQueues) {
-      const result = await writeSchedule("cherkasy", queueId, day, intervals);
+      const result = await writeSchedule("cherkasy", queueId, dayForCherkasy, intervals);
       const fmt = intervals.map(([s, e]) => `${formatMin(s)}-${formatMin(e)}`).join(", ");
       console.log(`  ${queueId}: ${fmt} → ${result.skipped ? "SKIP" : "v" + result.version}`);
     }

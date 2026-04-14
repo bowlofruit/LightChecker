@@ -1,5 +1,7 @@
 package com.bowlof.lightchecker.data.repository
 
+import android.content.Context
+import androidx.glance.appwidget.updateAll
 import androidx.room.withTransaction
 import com.bowlof.lightchecker.data.local.toDomain
 import com.bowlof.lightchecker.data.local.db.LightCheckerDatabase
@@ -8,14 +10,18 @@ import com.bowlof.lightchecker.data.messaging.FirebaseTopicManager
 import com.bowlof.lightchecker.domain.model.LocationSource
 import com.bowlof.lightchecker.domain.model.SavedPlace
 import com.bowlof.lightchecker.domain.repository.LocationsRepository
+import com.bowlof.lightchecker.widget.OutageGlanceAppWidget
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class LocationsRepositoryImpl @Inject constructor(
     private val database: LightCheckerDatabase,
+    @ApplicationContext private val context: Context,
     private val topicManager: FirebaseTopicManager,
 ) : LocationsRepository {
 
@@ -60,6 +66,7 @@ class LocationsRepositoryImpl @Inject constructor(
             dao.insert(entity)
         }
         topicManager.syncSubscriptionsAfterDataChange()
+        if (setAsWidgetPrimary) refreshHomeScreenWidget()
         return id
     }
 
@@ -67,6 +74,7 @@ class LocationsRepositoryImpl @Inject constructor(
         val row = dao.getById(id) ?: return
         dao.delete(row)
         topicManager.syncSubscriptionsAfterDataChange()
+        refreshHomeScreenWidget()
     }
 
     override suspend fun setWidgetPrimary(id: Long) {
@@ -76,6 +84,7 @@ class LocationsRepositoryImpl @Inject constructor(
             dao.update(row.copy(isWidgetPrimary = true))
         }
         topicManager.syncSubscriptionsAfterDataChange()
+        refreshHomeScreenWidget()
     }
 
     override suspend fun setNotificationsEnabled(id: Long, enabled: Boolean) {
@@ -88,6 +97,14 @@ class LocationsRepositoryImpl @Inject constructor(
             val b = dao.getById(idB) ?: return@withTransaction
             dao.updateSortOrder(idA, b.sortOrder)
             dao.updateSortOrder(idB, a.sortOrder)
+        }
+    }
+
+    private suspend fun refreshHomeScreenWidget() {
+        try {
+            OutageGlanceAppWidget().updateAll(context)
+        } catch (e: Exception) {
+            Timber.w(e, "glance widget after location change")
         }
     }
 }

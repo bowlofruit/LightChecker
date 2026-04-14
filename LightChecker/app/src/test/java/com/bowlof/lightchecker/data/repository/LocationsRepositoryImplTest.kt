@@ -33,7 +33,7 @@ class LocationsRepositoryImplTest {
         db = Room.inMemoryDatabaseBuilder(context, LightCheckerDatabase::class.java).build()
         topics = mockk()
         coJustRun { topics.syncSubscriptionsAfterDataChange() }
-        repo = LocationsRepositoryImpl(db, topics)
+        repo = LocationsRepositoryImpl(db, context, topics)
     }
 
     @After

@@ -3,6 +3,7 @@
  * Run: node functions/test/live-telegram-test.cjs
  */
 
+const { pickCherkasyScheduleMessage } = require("../lib/cherkasyPostDate");
 const { CherkasyTelegramParser, parseAllQueues } = require("../lib/parsers/cherkasyTelegramParser");
 
 async function main() {
@@ -57,14 +58,17 @@ async function main() {
     return;
   }
 
-  // Parse the most recent schedule message
-  const latest = scheduleMessages[scheduleMessages.length - 1];
-  console.log("=== Latest schedule message ===");
-  console.log(latest.substring(0, 500));
+  const picked = pickCherkasyScheduleMessage(messages);
+  if (!picked) {
+    console.log("pickCherkasyScheduleMessage: no candidate");
+    return;
+  }
+  const { text: chosen, dayYyyymmdd } = picked;
+  console.log(`=== Picked post (day ${dayYyyymmdd}) ===`);
+  console.log(chosen.substring(0, 500));
   console.log();
 
-  // Parse all queues
-  const allQueues = parseAllQueues(latest);
+  const allQueues = parseAllQueues(chosen);
   console.log(`Parsed ${allQueues.size} queues:`);
   for (const [queueId, intervals] of allQueues) {
     const formatted = intervals
@@ -82,7 +86,7 @@ async function main() {
   // Also test single-queue parser
   console.log("\n=== Single queue parser (4.1) ===");
   const parser = new CherkasyTelegramParser("4.1");
-  const result = parser.parse(latest);
+  const result = parser.parse(chosen);
   console.log(`  4.1: ${JSON.stringify(result)}`);
 }
 
