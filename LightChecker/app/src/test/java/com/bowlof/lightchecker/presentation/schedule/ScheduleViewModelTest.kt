@@ -3,6 +3,9 @@
 package com.bowlof.lightchecker.presentation.schedule
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.test.core.app.ApplicationProvider
 import app.cash.turbine.test
 import com.bowlof.lightchecker.domain.model.DaySchedule
@@ -49,6 +52,8 @@ class ScheduleViewModelTest {
     )
     private val useCase = GetDayScheduleForPlaceUseCase(scheduleRepo, clock)
 
+    private val preferences = mockk<DataStore<Preferences>>(relaxed = true)
+
     private val place = SavedPlace(
         id = 1L,
         regionId = "reg",
@@ -66,6 +71,7 @@ class ScheduleViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(mainDispatcher)
+        every { preferences.data } returns flowOf(emptyPreferences())
         every { locationsRepo.observeSavedPlaces() } returns flowOf(listOf(place))
         val today = KyivTime.todayYyyymmdd(clock)
         every { scheduleRepo.observeDaySchedule("reg", "q", today) } returns flowOf(
@@ -84,7 +90,7 @@ class ScheduleViewModelTest {
 
     @Test
     fun `uiState exposes formatted intervals for today`() = runTest(mainDispatcher) {
-        val vm = ScheduleViewModel(context, locationsRepo, scheduleRepo, useCase)
+        val vm = ScheduleViewModel(context, locationsRepo, scheduleRepo, preferences, useCase)
         backgroundScope.launch(mainDispatcher) { vm.uiState.collect { } }
         advanceUntilIdle()
         assertTrue(vm.uiState.value.intervalLines.isNotEmpty())
@@ -93,7 +99,7 @@ class ScheduleViewModelTest {
     @Test
     fun `refresh failure emits snackbar message`() = runTest(mainDispatcher) {
         coEvery { scheduleRepo.refreshSchedule(any(), any()) } throws IOException("net")
-        val vm = ScheduleViewModel(context, locationsRepo, scheduleRepo, useCase)
+        val vm = ScheduleViewModel(context, locationsRepo, scheduleRepo, preferences, useCase)
         backgroundScope.launch(mainDispatcher) { vm.uiState.collect { } }
         advanceUntilIdle()
         vm.snackbarMessages.test {

@@ -31,12 +31,14 @@ import androidx.glance.layout.padding
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import com.bowlof.lightchecker.BuildConfig
 import com.bowlof.lightchecker.MainActivity
 import com.bowlof.lightchecker.R
 import com.bowlof.lightchecker.di.GlanceWidgetEntryPoint
 import com.bowlof.lightchecker.domain.model.OutageInterval
 import com.bowlof.lightchecker.domain.time.KyivTime
 import com.bowlof.lightchecker.presentation.util.DateFormatter
+import com.bowlof.lightchecker.presentation.util.DemoSchedulePreview
 import com.bowlof.lightchecker.presentation.util.OutageIntervalFormatter
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.Dispatchers
@@ -69,10 +71,14 @@ class OutageGlanceAppWidget : GlanceAppWidget() {
 
     private suspend fun loadData(context: Context, showTomorrow: Boolean): WidgetData =
         withContext(Dispatchers.IO) {
-            val db = EntryPointAccessors.fromApplication(
+            val entry = EntryPointAccessors.fromApplication(
                 context.applicationContext,
                 GlanceWidgetEntryPoint::class.java,
-            ).database()
+            )
+            val db = entry.database()
+            val demoSchedule =
+                BuildConfig.DEBUG &&
+                    entry.preferencesDataStore().data.first()[DemoSchedulePreview.uiDemoScheduleKey] == true
 
             val primary = db.savedLocationDao().observePrimary().first()
                 ?: return@withContext WidgetData(
@@ -86,13 +92,24 @@ class OutageGlanceAppWidget : GlanceAppWidget() {
                 .observeSlots(primary.regionId, primary.queueId, targetDay)
                 .first()
 
+            val intervalStrings = if (demoSchedule) {
+                DemoSchedulePreview.intervals.map { OutageIntervalFormatter.format(it) }
+            } else {
+                slots.map {
+                    OutageIntervalFormatter.format(OutageInterval(it.startMinute, it.endMinute))
+                }
+            }
+            val emptyMessage = if (!demoSchedule && slots.isEmpty()) {
+                context.getString(R.string.widget_empty_day)
+            } else {
+                null
+            }
+
             WidgetData(
                 title = "${primary.cityDisplayName} · ${primary.queueDisplayName}",
                 subtitle = DateFormatter.format(context, targetDay),
-                intervals = slots.map {
-                    OutageIntervalFormatter.format(OutageInterval(it.startMinute, it.endMinute))
-                },
-                emptyMessage = if (slots.isEmpty()) context.getString(R.string.widget_empty_day) else null,
+                intervals = intervalStrings,
+                emptyMessage = emptyMessage,
             )
         }
 }

@@ -3,16 +3,23 @@
 package com.bowlof.lightchecker.presentation.schedule
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bowlof.lightchecker.BuildConfig
 import com.bowlof.lightchecker.domain.model.OutageInterval
 import com.bowlof.lightchecker.domain.model.SavedPlace
 import com.bowlof.lightchecker.domain.model.SelectedScheduleDay
 import com.bowlof.lightchecker.domain.repository.LocationsRepository
 import com.bowlof.lightchecker.domain.repository.ScheduleRepository
 import com.bowlof.lightchecker.domain.usecase.GetDayScheduleForPlaceUseCase
+import com.bowlof.lightchecker.presentation.util.DemoSchedulePreview
 import com.bowlof.lightchecker.presentation.util.OutageIntervalFormatter
 import com.bowlof.lightchecker.presentation.util.toScheduleUserMessage
+import com.bowlof.lightchecker.widget.OutageGlanceAppWidget
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Instant
@@ -20,11 +27,11 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -43,6 +50,8 @@ data class ScheduleUiState(
     val hasDataForSelectedDay: Boolean = false,
     val lastSyncFormatted: String? = null,
     val intervals: List<OutageInterval> = emptyList(),
+    /** True when the schedule list shows built-in sample intervals (debug build toggle). */
+    val isDemoUiData: Boolean = false,
 )
 
 @HiltViewModel
@@ -50,12 +59,17 @@ class ScheduleViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
     private val locationsRepository: LocationsRepository,
     private val scheduleRepository: ScheduleRepository,
+    private val preferences: DataStore<Preferences>,
     private val getDayScheduleForPlaceUseCase: GetDayScheduleForPlaceUseCase,
 ) : ViewModel() {
 
     private val _selectedTabIndex = MutableStateFlow(0)
     private val _selectedDay = MutableStateFlow(SelectedScheduleDay.Today)
     private val _isRefreshing = MutableStateFlow(false)
+
+    private val demoUiFromPrefs = preferences.data
+        .map { it[DemoSchedulePreview.uiDemoScheduleKey] == true }
+        .distinctUntilChanged()
 
     init {
         // Auto-refresh all saved places on first open
@@ -78,9 +92,12 @@ class ScheduleViewModel @Inject constructor(
         _selectedTabIndex,
         _selectedDay,
         _isRefreshing,
-    ) { p: List<SavedPlace>, tab: Int, day: SelectedScheduleDay, refreshing: Boolean ->
-        Quadruple(p, tab, day, refreshing)
-    }.flatMapLatest { (p, tab, day, refreshing) ->
+        demoUiFromPrefs,
+    ) { p: List<SavedPlace>, tab: Int, day: SelectedScheduleDay, refreshing: Boolean, demoRaw: Boolean ->
+        ScheduleCombineInputs(p, tab, day, refreshing, demoRaw)
+    }.flatMapLatest { inputs ->
+        val (p, tab, day, refreshing, demoRaw) = inputs
+        val demo = BuildConfig.DEBUG && demoRaw && p.isNotEmpty()
         if (p.isEmpty()) {
             flowOf(
                 ScheduleUiState(
@@ -90,8 +107,12 @@ class ScheduleViewModel @Inject constructor(
                     intervalLines = emptyList(),
                     isRefreshing = refreshing,
                     hasDataForSelectedDay = false,
+                    isDemoUiData = false,
                 ),
             )
+        } else if (demo) {
+            val safeTab = tab.coerceIn(0, p.lastIndex)
+            flowOf(demoScheduleUiState(p, safeTab, day, refreshing))
         } else {
             val safeTab = tab.coerceIn(0, p.lastIndex)
             val place = p[safeTab]
@@ -106,6 +127,7 @@ class ScheduleViewModel @Inject constructor(
                         hasDataForSelectedDay = schedule.intervals.isNotEmpty(),
                         lastSyncFormatted = schedule.lastSyncAtEpochMillis?.let { formatSyncTime(it) },
                         intervals = schedule.intervals,
+                        isDemoUiData = false,
                     )
                 }
         }
@@ -124,13 +146,35 @@ class ScheduleViewModel @Inject constructor(
     companion object {
         private val KYIV_ZONE = ZoneId.of("Europe/Kyiv")
         private val SYNC_TIME_FMT = DateTimeFormatter.ofPattern("HH:mm")
+
+        private fun demoScheduleUiState(
+            places: List<SavedPlace>,
+            selectedTabIndex: Int,
+            selectedDay: SelectedScheduleDay,
+            isRefreshing: Boolean,
+        ): ScheduleUiState {
+            val intervals = DemoSchedulePreview.intervals
+            val lines = intervals.map { OutageIntervalFormatter.format(it) }
+            return ScheduleUiState(
+                places = places,
+                selectedTabIndex = selectedTabIndex,
+                selectedDay = selectedDay,
+                intervalLines = lines,
+                isRefreshing = isRefreshing,
+                hasDataForSelectedDay = true,
+                lastSyncFormatted = "12:00",
+                intervals = intervals,
+                isDemoUiData = true,
+            )
+        }
     }
 
-    private data class Quadruple<A, B, C, D>(
-        val first: A,
-        val second: B,
-        val third: C,
-        val fourth: D,
+    private data class ScheduleCombineInputs(
+        val places: List<SavedPlace>,
+        val tab: Int,
+        val day: SelectedScheduleDay,
+        val refreshing: Boolean,
+        val demo: Boolean,
     )
 
     fun selectTab(index: Int) {
@@ -152,6 +196,14 @@ class ScheduleViewModel @Inject constructor(
 
     fun selectDay(day: SelectedScheduleDay) {
         _selectedDay.value = day
+    }
+
+    fun setDemoUiDataEnabled(enabled: Boolean) {
+        if (!BuildConfig.DEBUG) return
+        viewModelScope.launch {
+            preferences.edit { it[DemoSchedulePreview.uiDemoScheduleKey] = enabled }
+            runCatching { OutageGlanceAppWidget().updateAll(appContext) }
+        }
     }
 
     fun refresh() {

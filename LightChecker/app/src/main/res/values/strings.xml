@@ -7,6 +7,8 @@
     <string name="schedule_no_outages">Відключень на цей день немає.</string>
     <string name="schedule_today">Сьогодні</string>
     <string name="schedule_tomorrow">Завтра</string>
+    <string name="schedule_show_demo_data">Відобразити тестові дані</string>
+    <string name="schedule_hide_demo_data">Приховати тестові дані</string>
     <string name="schedule_pull_refresh">Потягніть для оновлення</string>
     <string name="schedule_last_sync">Оновлено: %1$s</string>
     <string name="schedule_currently_off">Зараз відключення, до %1$s</string>
@@ -69,6 +71,6 @@
     <string name="schedule_set_widget">Відображати на віджеті</string>
 
     <string name="widget_no_place">Додайте місце в застосунку</string>
-    <string name="widget_empty_day">Немає даних</string>
+    <string name="widget_empty_day">@string/schedule_no_outages</string>
     <string name="widget_tomorrow_label">завтра</string>
 </resources>

@@ -33,6 +33,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -52,6 +53,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import com.bowlof.lightchecker.BuildConfig
 import com.bowlof.lightchecker.R
 import com.bowlof.lightchecker.widget.OutageWidgetReceiver
 import com.bowlof.lightchecker.domain.model.OutageInterval
@@ -200,6 +202,23 @@ fun ScheduleRoute(
                         ) {
                             Text(label)
                         }
+                    }
+                }
+
+                if (BuildConfig.DEBUG && ui.places.isNotEmpty()) {
+                    TextButton(
+                        onClick = { viewModel.setDemoUiDataEnabled(!ui.isDemoUiData) },
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                    ) {
+                        Text(
+                            stringResource(
+                                if (ui.isDemoUiData) {
+                                    R.string.schedule_hide_demo_data
+                                } else {
+                                    R.string.schedule_show_demo_data
+                                },
+                            ),
+                        )
                     }
                 }
 
