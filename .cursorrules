@@ -1,160 +1,84 @@
-# .cursorrules для LightChecker Workspace
+# .cursorrules для LightChecker (Android + Kotlin)
 
-## Структура Workspace
+## Структура репозиторію
 
-Два взаємопов'язані проекти:
-- **Unity (C#)**: `LightCheckerUnity/` - URP, Zenject DI, UniTask, R3, Addressables, JNI інтеграція
-- **Android (Kotlin)**: `LightCheckerAndroid/lightchecker-plugin/` - Android Library, SDK 36, minSdk 26, Java 17, WorkManager, ML Kit OCR
+Основний код — у каталозі **`LightChecker/`** (Gradle root): модуль **`app`** (застосунок), **`functions`** (Firebase Cloud Functions, TypeScript), спільні `gradle` та `settings.gradle.kts`.
 
 **Важливі шляхи:**
-- Unity скрипти: `LightCheckerUnity/Assets/App/Scripts/`
-- Android код: `LightCheckerAndroid/lightchecker-plugin/src/main/java/com/bowlof/lightchecker/plugin/`
-- Unity classes.jar: `LightCheckerAndroid/lightchecker-plugin/libs/classes.jar`
+
+- Застосунок: `LightChecker/app/src/main/java/com/bowlof/lightchecker/`
+- Тести: `LightChecker/app/src/test/`
+- Хмарні функції: `LightChecker/functions/src/`
 
 ---
 
-## Unity (C#) Правила
+## Kotlin / Android Правила
 
 ### Стиль коду
-- **Naming**: PascalCase (класи/методи), camelCase (поля/змінні), UPPER_CASE (константи)
-- **Асинхронність**: ЗАВЖДИ `UniTask`, НІКОЛИ `Task`. Використовуй `UniTaskCompletionSource` для callback→async конвертації
-- **DI (Zenject)**: Всі сервіси в Installer, конструктор injection, `[Inject]` для MonoBehaviour
-- **Reactive (R3)**: `Subject<T>` для подій, `using var sub = ...Subscribe()` для підписок (завжди dispose!)
 
-### Unity API
-- НЕ викликай Unity API з не-головного потоку
-- `Application.platform != RuntimePlatform.Android` для перевірки платформи
-- JNI: завжди `try-catch`, `using` для `AndroidJavaClass`/`AndroidJavaObject`, правильні типи (`(long)int` для Long)
-- Addressables замість Resources, ScriptableObjects для конфігурації
-
----
-
-## Android (Kotlin) Правила
-
-### Стиль коду
 - **Naming**: PascalCase (класи), camelCase (функції/змінні), UPPER_SNAKE_CASE (константи)
-- **Kotlin idioms**: data classes, sealed classes (Result pattern), extension functions, Elvis operator
-- **Асинхронність**: ЗАВЖДИ Coroutines, `CoroutineScope(Dispatchers.IO + SupervisorJob())` для фонових операцій
-- **Result pattern**: `sealed class Result<out T>` для обробки помилок
+- **Kotlin idioms**: data classes, sealed classes для результатів і помилок, extension functions за потреби
+- **Асинхронність**: корутини, `viewModelScope` / відповідні scope для фонових задач; для Firebase — `kotlinx-coroutines-play-services` де доречно
+- **Compose**: стан через ViewModel, `collectAsStateWithLifecycle`, уникай важкої логіки в composable
 
-### Android Architecture
-- **Context**: НЕ зберігай у статичних полях, передавай як параметр, використовуй `ApplicationContext` для довгоживучих операцій
-- **WorkManager**: `flexInterval` (30% від інтервалу) для battery optimization, Constraints (`NetworkType.CONNECTED`)
-- **SharedPreferences**: `prefs.edit { putString(...) }` extension function
-- **ViewBinding**: увімкнено в `build.gradle.kts`
+### Архітектура
+
+- Шари: `presentation`, `domain`, `data`, `di` — узгоджено з Guide to app architecture
+- **Room**: DAO, міграції, `exportSchema` для контролю схеми
+- **Hilt**: модулі для DB, Firestore, репозиторіїв, WorkManager
+- **WorkManager**: обмеження мережі, backoff, `enqueueUniqueWork` де потрібно уникати дублікатів
+- **FCM**: data-only повідомлення як тригери для `SyncScheduleWorker`
 
 ### Gradle
-- Kotlin DSL синтаксис, `compileSdk = 36`, `minSdk = 26`, `JavaVersion.VERSION_17`
-- Залежності: AndroidX Core 1.17.0, WorkManager 2.11.0, ML Kit 19.0.1
-- Unity classes.jar в `libs/classes.jar` (auto-detect якщо немає)
+
+- Kotlin DSL (`*.gradle.kts`), `compileSdk` 36, **`minSdk` 29**, `targetSdk` 36, JDK відповідно до Android Studio / AGP
 
 ---
 
-## Unity-Android Інтеграція
+## Build та перевірка
 
-### JNI виклики
-- **Unity → Android**: `AndroidJavaClass(PLUGIN_CLASS).CallStatic("method", params...)` з `try-catch`
-- **Android → Unity**: `UnityPlayer.UnitySendMessage(callbackObj, callbackMethod, message)`
-- **Типи**: `int`→`Int`, `long`→`Long`, `string`→`String`
-- **Анотації**: `@Keep` на класи/об'єкти, `@JvmStatic` на методи, які викликаються з Unity
-- **Thread safety**: Unity викликає з головного потоку, Android виконує в корутинах на `Dispatchers.IO`, `UnitySendMessage` через `Dispatchers.Main` якщо потрібно
+З кореня **`LightChecker/`**:
 
-### Callback механізм
-- Unity передає `callbackObj` (GameObject name) та `callbackMethod` (метод назва)
-- Android викликає `UnitySendMessage(callbackObj, callbackMethod, message)`
-- Unity метод: `public void MethodName(string message)`
-- Помилки: формат `"ERROR:message"`, Unity перевіряє `message.StartsWith("ERROR:")`
-
----
-
-## Build та Компіляція
-
-### Unity
-- Перевірка: Unity Editor Console після змін C# скриптів
-- Android плагін автоматично експортується в `Assets/Plugins/Android/`
-
-### Android (PowerShell)
 ```powershell
-cd LightCheckerAndroid
-.\gradlew :lightchecker-plugin:compileDebugKotlin  # Після змін .kt, build.gradle.kts, AndroidManifest.xml
-.\gradlew :lightchecker-plugin:lint
+cd LightChecker
+.\gradlew :app:compileDebugKotlin
+.\gradlew :app:testDebugUnitTest
+.\gradlew detekt
 ```
-**КРИТИЧНО**: Завжди перевіряй компіляцію перед завершенням завдання!
+
+Після змін у Kotlin, маніфесті, ресурсах або Gradle — бажано прогнати хоча б `compileDebugKotlin`.
 
 ---
 
 ## Тестування
 
-- **Unity**: EditMode/PlayMode тести в `Editor` папках, `[Test]`/`[UnityTest]`
-- **Android**: Unit тести в `src/test/java/`, JUnit 4, Mockito-Kotlin, `kotlinx-coroutines-test` для корутин
+- Юніт-тести: `app/src/test/java/`, JUnit, MockK, Turbine для Flow, `kotlinx-coroutines-test`, Robolectric де використовується
+- Інструментальні / UI — за потреби в `androidTest`
 
 ---
 
-## Помилки та Дебагінг
+## Помилки та логування
 
-### Типові помилки
-- **Unity JNI Error**: перевір `@JvmStatic` та `@Keep` в Android коді
-- **Android ClassNotFoundException**: перевір Unity classes.jar доступність
-- **ProGuard/R8**: додай `@Keep` або правила в `consumer-rules.pro`
-
-### Логування
-- **Unity**: `Debug.Log/LogWarning/LogError` з префіксами `[NativeBridge]`, `[LightChecker]`
-- **Android**: `Log.d/w/e(TAG, ...)` з константою `TAG` для кожного класу
-
-### Error Handling
-- **Unity**: `try-catch` навколо JNI викликів, обробка через `OnError` Subjects
-- **Android**: `try-catch` в корутинах, Result pattern, `sendError(callbackObj, callbackMethod, "ERROR:...")`
+- **Android**: `Timber` у debug або `Log` зі стабільним `TAG`
+- Обробка помилок Firestore: мапінг у зрозумілі для UI повідомлення
 
 ---
 
-## Best Practices
+## Файли та структура
 
-### Performance
-- Unity: Object Pooling, кешування компонентів, Addressables
-- Android: `flexInterval` в WorkManager, кешування OCR результатів, `Dispatchers.IO` для I/O
+### Зазвичай не комітити
 
-### Memory Management
-- Unity: `using` для `IDisposable`, dispose Observable підписок, `UniTask` замість `Task`
-- Android: не зберігай Context статично, `WeakReference` для Activity, закривай Closeable ресурси
-
-### Thread Safety
-- Unity: не викликай Unity API з не-головного потоку
-- Android: Coroutines для async, `Dispatchers.Main` для UI, thread-safe структури при потребі
-
----
-
-## Файли та Структура
-
-### Не змінювати
-- Unity: `Library/`, `Temp/`, `*.meta`, `Packages/` (крім локальних модифікацій)
-- Android: `build/`, `.gradle/`, `local.properties`
+- `build/`, `.gradle/`, `.idea/`, `local.properties`
 
 ### Важливі файли
-- Unity: `ProjectSettings/ProjectSettings.asset`, `Assets/App/Configs/*.asset`, `Assets/Plugins/Android/`
-- Android: `build.gradle.kts`, `AndroidManifest.xml`, `consumer-rules.pro`, `proguard-rules.pro`
+
+- `LightChecker/app/build.gradle.kts`, `AndroidManifest.xml`, `google-services.json` (локально, не в публічних шаблонах)
+- `LightChecker/functions/package.json`, вихідний TypeScript у `functions/src/`
 
 ---
 
 ## Інструкції для AI
 
-### КРИТИЧНО
-1. **Завжди перевіряй компіляцію** після змін (Unity Console / `.\gradlew compileDebugKotlin`)
-2. **Не ламай інтеграцію**: не змінюй JNI сигнатури без оновлення обох сторін, не видаляй `@Keep`/`@JvmStatic`, не змінюй формат callback повідомлень
-3. **Пояснюй зміни**: коментарі для складного коду, вказуй на обмеження
-4. **Тести**: пропонуй unit/integration тести для нового коду
-
-### Обмеження платформ
-- **Android**: minSdk 26 (Android 8.0), targetSdk 36 (Android 15), Java 17
-- **Unity**: URP (Universal Render Pipeline), перевіряй сумісність з версією Unity
-
-### Команди перевірки
-```powershell
-# Android
-cd LightCheckerAndroid
-.\gradlew :lightchecker-plugin:compileDebugKotlin
-.\gradlew :lightchecker-plugin:lint
-```
-
----
-
-**Порядок розробки**: Android окремо → Unity інтеграція → тестування на пристрої**
+1. Після змін у коді за можливості перевіряй збірку `.\gradlew :app:compileDebugKotlin` (або тести).
+2. Не розширюй scope: зміни лише під поставлене завдання.
+3. Не додавай залежності без потреби; узгоджуй версії з Firebase BoM / каталогом версій.
