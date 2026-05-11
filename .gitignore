@@ -23,6 +23,13 @@ out/
 local.properties
 *.local
 
+# Firebase (тримати локально, не комітити)
+google-services.json
+GoogleService-Info.plist
+firebase-sa.json
+*.keystore
+*.jks
+
 # Android build / кеш
 *.dex
 *.class
