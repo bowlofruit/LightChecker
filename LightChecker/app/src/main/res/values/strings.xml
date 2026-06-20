@@ -52,6 +52,7 @@
     <string name="about_title">Про додаток</string>
     <string name="about_description">LightChecker — додаток для моніторингу графіків планових відключень електроенергії в Україні.</string>
     <string name="settings_about">Про додаток</string>
+    <string name="settings_seed_demo">Завантажити демо-дані</string>
 
     <string name="nav_settings_content_desc">Налаштування</string>
     <string name="nav_back_content_desc">Назад</string>

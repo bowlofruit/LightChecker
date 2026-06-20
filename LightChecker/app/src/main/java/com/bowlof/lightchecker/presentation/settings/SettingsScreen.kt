@@ -141,6 +141,13 @@ fun SettingsRoute(
                     Text(stringResource(R.string.settings_about))
                 }
             }
+            if (BuildConfig.DEBUG) {
+                item {
+                    TextButton(onClick = viewModel::seedDemoData) {
+                        Text(stringResource(R.string.settings_seed_demo))
+                    }
+                }
+            }
             item {
                 Text(
                     stringResource(R.string.settings_version, BuildConfig.VERSION_NAME),
