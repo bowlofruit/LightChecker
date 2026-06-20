@@ -2,10 +2,12 @@
  * Cloud Functions: health, cron pipeline (multi-source fetch → parser registry → Firestore → FCM),
  * optional HTTP trigger.
  */
+import { createHash, timingSafeEqual } from "node:crypto";
 import { getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 import * as logger from "firebase-functions/logger";
+import { setGlobalOptions } from "firebase-functions/v2";
 import { onRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { fetchSource } from "./fetchSource";
@@ -23,6 +25,17 @@ import { updateAllCities } from "./scheduleUpdateAll";
 
 if (!getApps().length) {
   initializeApp();
+}
+
+// Deploy closest to the Ukrainian audience and Telegram sources (lower latency/egress).
+setGlobalOptions({ region: "europe-west1" });
+
+/** Constant-time API-key check (avoids leaking length/prefix via `!==` short-circuit). */
+function httpKeyMatches(provided: unknown, expected: string): boolean {
+  if (!expected || typeof provided !== "string") return false;
+  const a = createHash("sha256").update(provided).digest();
+  const b = createHash("sha256").update(expected).digest();
+  return timingSafeEqual(a, b);
 }
 
 function effectivePipelineDayYyyymmdd(): number {
@@ -99,7 +112,7 @@ export const runAllCitiesHttp = onRequest(
   { memory: "1GiB", timeoutSeconds: 300 },
   async (req, res) => {
     const expected = httpScheduleKey.value();
-    if (!expected || req.query.key !== expected) {
+    if (!httpKeyMatches(req.query.key, expected)) {
       res.status(403).send("forbidden");
       return;
     }
@@ -118,7 +131,7 @@ export const runAllCitiesHttp = onRequest(
 /** Ручний запуск пайплайну: `?key=` має збігатися з `HTTP_SCHEDULE_KEY` (fn-cloud-scheduler / тести). */
 export const runSchedulePipelineHttp = onRequest(async (req, res) => {
   const expected = httpScheduleKey.value();
-  if (!expected || req.query.key !== expected) {
+  if (!httpKeyMatches(req.query.key, expected)) {
     res.status(403).send("forbidden");
     return;
   }

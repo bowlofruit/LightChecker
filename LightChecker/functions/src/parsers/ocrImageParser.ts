@@ -1,5 +1,4 @@
-import sharp from "sharp";
-import Tesseract from "tesseract.js";
+import { ocrImage } from "./ocrImage";
 import { ScheduleParser } from "./types";
 
 /**
@@ -30,25 +29,6 @@ export class OcrImageParser implements ScheduleParser {
     const text = await ocrImage(data);
     return extractQueueIntervals(text);
   }
-}
-
-/** Preprocess image for better OCR, then run Tesseract. */
-async function ocrImage(raw: Buffer): Promise<string> {
-  const processed = await sharp(raw)
-    .greyscale()
-    .normalize()
-    .sharpen({ sigma: 2 })
-    .threshold(128)
-    .resize({ width: 2000, withoutEnlargement: false })
-    .png()
-    .toBuffer();
-
-  const {
-    data: { text },
-  } = await Tesseract.recognize(processed, "ukr+eng", {
-    logger: () => {},
-  });
-  return text;
 }
 
 /**

@@ -7,7 +7,7 @@ const NOW_KYIV_MAR23 = new Date("2026-03-23T15:00:00+02:00");
 
 function createMockFirestore() {
   const store = Object.create(null);
-  return {
+  const db = {
     collection(col) {
       return {
         doc(id) {
@@ -24,10 +24,23 @@ function createMockFirestore() {
         },
       };
     },
+    // Minimal transaction shim mirroring firebase-admin: get() returns a snapshot,
+    // set() is a buffered write applied as the callback runs (sufficient for single-doc tests).
+    async runTransaction(fn) {
+      const tx = {
+        get: (ref) => ref.get(),
+        set: (ref, data) => {
+          ref.set(data);
+          return tx;
+        },
+      };
+      return fn(tx);
+    },
     _peek(path) {
       return store[path];
     },
   };
+  return db;
 }
 
 function createMockMessaging(sent) {

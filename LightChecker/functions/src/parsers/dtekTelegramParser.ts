@@ -1,6 +1,6 @@
-import sharp from "sharp";
-import Tesseract from "tesseract.js";
 import { extractDtekScheduleDayYyyymmdd } from "../dtekPostDate";
+import { fetchImage } from "./imageFetch";
+import { ocrImage } from "./ocrImage";
 import { ScheduleParser } from "./types";
 
 export type DtekScheduleParseResult = {
@@ -161,29 +161,6 @@ function detectRegionFromText(text: string): string | null {
     if (text.includes(keyword)) return regionId;
   }
   return null;
-}
-
-async function fetchImage(url: string): Promise<Buffer> {
-  const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
-  return Buffer.from(await res.arrayBuffer());
-}
-
-async function ocrImage(raw: Buffer): Promise<string> {
-  const processed = await sharp(raw)
-    .greyscale()
-    .normalize()
-    .sharpen({ sigma: 2 })
-    .threshold(128)
-    .resize({ width: 2000, withoutEnlargement: false })
-    .png()
-    .toBuffer();
-
-  const {
-    data: { text },
-  } = await Tesseract.recognize(processed, "ukr+eng", {
-    logger: () => {},
-  });
-  return text;
 }
 
 /**
