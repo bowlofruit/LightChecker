@@ -3,7 +3,6 @@
 package com.bowlof.lightchecker.presentation.settings
 
 import app.cash.turbine.test
-import com.bowlof.lightchecker.domain.debug.DemoDataSeeder
 import com.bowlof.lightchecker.domain.model.SavedPlace
 import com.bowlof.lightchecker.domain.repository.LocationsRepository
 import io.mockk.coVerify
@@ -32,7 +31,7 @@ class SettingsViewModelTest {
         Dispatchers.setMain(testDispatcher)
         repo = mockk(relaxed = true)
         every { repo.observeSavedPlaces() } returns flowOf(listOf(testPlace()))
-        viewModel = SettingsViewModel(repo, mockk<DemoDataSeeder>(relaxed = true))
+        viewModel = SettingsViewModel(repo)
     }
 
     @After

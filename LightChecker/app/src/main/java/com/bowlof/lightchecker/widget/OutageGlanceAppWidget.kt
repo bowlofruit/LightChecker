@@ -77,7 +77,8 @@ class OutageGlanceAppWidget : GlanceAppWidget() {
             )
             val db = entry.database()
             val demoSchedule =
-                BuildConfig.DEBUG && entry.uiPreferences().demoUiScheduleEnabled.first()
+                BuildConfig.DEBUG &&
+                    entry.preferencesDataStore().data.first()[DemoSchedulePreview.uiDemoScheduleKey] == true
 
             val primary = db.savedLocationDao().observePrimary().first()
                 ?: return@withContext WidgetData(

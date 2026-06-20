@@ -142,7 +142,6 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.androidx.room.testing)
     testImplementation(libs.androidx.test.core)
-    testImplementation(libs.androidx.work.testing)
     testImplementation(libs.robolectric)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

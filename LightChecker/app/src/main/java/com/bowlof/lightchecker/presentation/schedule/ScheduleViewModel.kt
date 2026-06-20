@@ -3,6 +3,9 @@
 package com.bowlof.lightchecker.presentation.schedule
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,7 +15,6 @@ import com.bowlof.lightchecker.domain.model.SavedPlace
 import com.bowlof.lightchecker.domain.model.SelectedScheduleDay
 import com.bowlof.lightchecker.domain.repository.LocationsRepository
 import com.bowlof.lightchecker.domain.repository.ScheduleRepository
-import com.bowlof.lightchecker.domain.repository.UiPreferencesRepository
 import com.bowlof.lightchecker.domain.usecase.GetDayScheduleForPlaceUseCase
 import com.bowlof.lightchecker.presentation.util.DemoSchedulePreview
 import com.bowlof.lightchecker.presentation.util.OutageIntervalFormatter
@@ -58,7 +60,7 @@ class ScheduleViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
     private val locationsRepository: LocationsRepository,
     private val scheduleRepository: ScheduleRepository,
-    private val uiPreferences: UiPreferencesRepository,
+    private val preferences: DataStore<Preferences>,
     private val getDayScheduleForPlaceUseCase: GetDayScheduleForPlaceUseCase,
 ) : ViewModel() {
 
@@ -66,7 +68,9 @@ class ScheduleViewModel @Inject constructor(
     private val _selectedDay = MutableStateFlow(SelectedScheduleDay.Today)
     private val _isRefreshing = MutableStateFlow(false)
 
-    private val demoUiFromPrefs = uiPreferences.demoUiScheduleEnabled
+    private val demoUiFromPrefs = preferences.data
+        .map { it[DemoSchedulePreview.uiDemoScheduleKey] == true }
+        .distinctUntilChanged()
 
     init {
         // Auto-refresh all saved places once per process launch (not on every VM recreation).
@@ -203,7 +207,7 @@ class ScheduleViewModel @Inject constructor(
     fun setDemoUiDataEnabled(enabled: Boolean) {
         if (!BuildConfig.DEBUG) return
         viewModelScope.launch {
-            uiPreferences.setDemoUiScheduleEnabled(enabled)
+            preferences.edit { it[DemoSchedulePreview.uiDemoScheduleKey] = enabled }
             runCatching { OutageGlanceAppWidget().updateAll(appContext) }
         }
     }

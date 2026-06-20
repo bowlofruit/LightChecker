@@ -1,7 +1,8 @@
 package com.bowlof.lightchecker.di
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import com.bowlof.lightchecker.data.local.db.LightCheckerDatabase
-import com.bowlof.lightchecker.domain.repository.UiPreferencesRepository
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -10,5 +11,5 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 interface GlanceWidgetEntryPoint {
     fun database(): LightCheckerDatabase
-    fun uiPreferences(): UiPreferencesRepository
+    fun preferencesDataStore(): DataStore<Preferences>
 }
