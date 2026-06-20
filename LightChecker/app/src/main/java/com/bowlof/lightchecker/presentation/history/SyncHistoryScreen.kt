@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bowlof.lightchecker.R
-import com.bowlof.lightchecker.data.local.db.SyncHistoryEntity
+import com.bowlof.lightchecker.domain.model.SyncHistoryRecord
 import com.bowlof.lightchecker.presentation.util.EmptyStateBox
 import java.time.Instant
 import java.time.ZoneId
@@ -75,7 +75,7 @@ fun SyncHistoryRoute(
 }
 
 @Composable
-private fun HistoryRow(entry: SyncHistoryEntity) {
+private fun HistoryRow(entry: SyncHistoryRecord) {
     val timeText = DateTimeFormatter.ofPattern("dd.MM HH:mm")
         .format(Instant.ofEpochMilli(entry.syncedAtEpochMillis).atZone(KYIV_ZONE))
 

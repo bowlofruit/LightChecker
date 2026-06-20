@@ -1,6 +1,6 @@
 package com.bowlof.lightchecker.domain.usecase
 
-import com.bowlof.lightchecker.domain.model.CityCatalogRow
+import com.bowlof.lightchecker.domain.model.CatalogCity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -10,8 +10,8 @@ class ResolveCityUseCaseTest {
     private val useCase = ResolveCityUseCase()
 
     private val catalog = listOf(
-        CityCatalogRow("kyiv", "Київ"),
-        CityCatalogRow("lviv", "Львів"),
+        CatalogCity("kyiv", "Київ", emptyList()),
+        CatalogCity("lviv", "Львів", emptyList()),
     )
 
     @Test

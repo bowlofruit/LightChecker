@@ -1,9 +1,17 @@
 package com.bowlof.lightchecker.di
 
+import com.bowlof.lightchecker.data.catalog.CitiesCatalogLoader
+import com.bowlof.lightchecker.data.location.DeviceLocationReader
 import com.bowlof.lightchecker.data.repository.LocationsRepositoryImpl
 import com.bowlof.lightchecker.data.repository.ScheduleRepositoryImpl
+import com.bowlof.lightchecker.data.repository.SyncHistoryRepositoryImpl
+import com.bowlof.lightchecker.data.repository.UiPreferencesRepositoryImpl
+import com.bowlof.lightchecker.domain.catalog.CityCatalogProvider
+import com.bowlof.lightchecker.domain.location.DeviceLocationProvider
 import com.bowlof.lightchecker.domain.repository.LocationsRepository
 import com.bowlof.lightchecker.domain.repository.ScheduleRepository
+import com.bowlof.lightchecker.domain.repository.SyncHistoryRepository
+import com.bowlof.lightchecker.domain.repository.UiPreferencesRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -21,4 +29,20 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindLocationsRepository(impl: LocationsRepositoryImpl): LocationsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSyncHistoryRepository(impl: SyncHistoryRepositoryImpl): SyncHistoryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCityCatalogProvider(impl: CitiesCatalogLoader): CityCatalogProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindDeviceLocationProvider(impl: DeviceLocationReader): DeviceLocationProvider
+
+    @Binds
+    @Singleton
+    abstract fun bindUiPreferencesRepository(impl: UiPreferencesRepositoryImpl): UiPreferencesRepository
 }

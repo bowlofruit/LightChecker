@@ -26,7 +26,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -128,7 +127,7 @@ private fun OnboardingContent(
     onSave: () -> Unit,
     isSaving: Boolean,
 ) {
-    val city = ui.catalog[ui.selectedCityIndex]
+    val city = ui.catalog.getOrNull(ui.selectedCityIndex) ?: ui.catalog.first()
     var cityExpanded by remember { mutableStateOf(false) }
     var queueExpanded by remember { mutableStateOf(false) }
 

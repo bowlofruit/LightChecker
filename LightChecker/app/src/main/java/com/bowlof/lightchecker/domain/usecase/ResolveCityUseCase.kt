@@ -1,12 +1,12 @@
 package com.bowlof.lightchecker.domain.usecase
 
-import com.bowlof.lightchecker.domain.model.CityCatalogRow
+import com.bowlof.lightchecker.domain.model.CatalogCity
 import javax.inject.Inject
 
 class ResolveCityUseCase @Inject constructor() {
 
     /** Індекс міста в каталозі або `null`, якщо не вдалось зіставити. */
-    fun resolveIndex(catalog: List<CityCatalogRow>, locality: String?): Int? {
+    fun resolveIndex(catalog: List<CatalogCity>, locality: String?): Int? {
         val loc = locality?.lowercase()?.trim().orEmpty()
         if (loc.isEmpty()) return null
         val idx = catalog.indexOfFirst { city ->

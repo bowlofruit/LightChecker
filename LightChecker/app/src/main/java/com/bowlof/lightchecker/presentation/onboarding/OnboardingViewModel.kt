@@ -2,10 +2,9 @@ package com.bowlof.lightchecker.presentation.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bowlof.lightchecker.data.catalog.CitiesCatalogLoader
-import com.bowlof.lightchecker.data.catalog.CityCatalogEntry
-import com.bowlof.lightchecker.data.location.DeviceLocationReader
-import com.bowlof.lightchecker.domain.model.CityCatalogRow
+import com.bowlof.lightchecker.domain.catalog.CityCatalogProvider
+import com.bowlof.lightchecker.domain.location.DeviceLocationProvider
+import com.bowlof.lightchecker.domain.model.CatalogCity
 import com.bowlof.lightchecker.domain.model.LocationSource
 import com.bowlof.lightchecker.domain.repository.LocationsRepository
 import com.bowlof.lightchecker.domain.usecase.ResolveCityUseCase
@@ -19,7 +18,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class OnboardingUiState(
-    val catalog: List<CityCatalogEntry> = emptyList(),
+    val catalog: List<CatalogCity> = emptyList(),
     val catalogError: Boolean = false,
     val selectedCityIndex: Int = 0,
     val selectedQueueIndex: Int = 0,
@@ -30,9 +29,9 @@ data class OnboardingUiState(
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
-    private val catalogLoader: CitiesCatalogLoader,
+    private val catalogProvider: CityCatalogProvider,
     private val locationsRepository: LocationsRepository,
-    private val deviceLocationReader: DeviceLocationReader,
+    private val deviceLocationProvider: DeviceLocationProvider,
     private val resolveCityUseCase: ResolveCityUseCase,
 ) : ViewModel() {
 
@@ -41,7 +40,7 @@ class OnboardingViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            catalogLoader.load()
+            catalogProvider.load()
                 .onSuccess { cat ->
                     _ui.update {
                         it.copy(
@@ -68,7 +67,7 @@ class OnboardingViewModel @Inject constructor(
 
     fun tryResolveCityByDeviceLocation() {
         viewModelScope.launch {
-            val resolved = deviceLocationReader.getLastLocationOrNull() ?: run {
+            val resolved = deviceLocationProvider.getLastLocationOrNull() ?: run {
                 _ui.update { it.copy(locationHint = null) }
                 return@launch
             }
@@ -77,8 +76,7 @@ class OnboardingViewModel @Inject constructor(
                 return@launch
             }
             val cities = _ui.value.catalog
-            val rows = cities.map { CityCatalogRow(it.cityId, it.displayName) }
-            val idx = resolveCityUseCase.resolveIndex(rows, locality)
+            val idx = resolveCityUseCase.resolveIndex(cities, locality)
             if (idx != null) {
                 _ui.update {
                     it.copy(selectedCityIndex = idx, selectedQueueIndex = 0, locationHint = cities[idx].displayName)

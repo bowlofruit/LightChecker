@@ -1,6 +1,10 @@
 package com.bowlof.lightchecker.data.catalog
 
 import android.content.Context
+import com.bowlof.lightchecker.domain.catalog.CityCatalogProvider
+import com.bowlof.lightchecker.domain.model.CatalogCity
+import com.bowlof.lightchecker.domain.model.CatalogQueue
+import com.bowlof.lightchecker.domain.model.CityCatalog
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -11,9 +15,9 @@ import javax.inject.Singleton
 @Singleton
 class CitiesCatalogLoader @Inject constructor(
     @ApplicationContext private val context: Context,
-) {
+) : CityCatalogProvider {
 
-    suspend fun load(): Result<CitiesCatalog> = withContext(Dispatchers.IO) {
+    override suspend fun load(): Result<CityCatalog> = withContext(Dispatchers.IO) {
         runCatching {
             val json = context.assets.open(ASSET_NAME).bufferedReader().use { it.readText() }
             val root = JSONObject(json)
@@ -27,7 +31,7 @@ class CitiesCatalogLoader @Inject constructor(
                         for (j in 0 until queuesJson.length()) {
                             val q = queuesJson.getJSONObject(j)
                             add(
-                                QueueCatalogEntry(
+                                CatalogQueue(
                                     queueId = q.getString("queueId"),
                                     displayName = q.getString("displayName"),
                                     regionId = q.getString("regionId"),
@@ -36,7 +40,7 @@ class CitiesCatalogLoader @Inject constructor(
                         }
                     }
                     add(
-                        CityCatalogEntry(
+                        CatalogCity(
                             cityId = c.getString("cityId"),
                             displayName = c.getString("displayName"),
                             queues = queues,
@@ -44,7 +48,7 @@ class CitiesCatalogLoader @Inject constructor(
                     )
                 }
             }
-            CitiesCatalog(version, cities)
+            CityCatalog(version, cities)
         }
     }
 
