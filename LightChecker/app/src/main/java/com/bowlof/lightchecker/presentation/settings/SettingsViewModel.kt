@@ -2,6 +2,7 @@ package com.bowlof.lightchecker.presentation.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bowlof.lightchecker.domain.debug.DemoDataSeeder
 import com.bowlof.lightchecker.domain.repository.LocationsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -12,6 +13,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val locationsRepository: LocationsRepository,
+    private val demoDataSeeder: DemoDataSeeder,
 ) : ViewModel() {
 
     val places = locationsRepository.observeSavedPlaces()
@@ -31,5 +33,10 @@ class SettingsViewModel @Inject constructor(
 
     fun swapOrder(idA: Long, idB: Long) {
         viewModelScope.launch { locationsRepository.swapSortOrder(idA, idB) }
+    }
+
+    /** DEBUG-only: fill the local store with a demo dataset to showcase the app. */
+    fun seedDemoData() {
+        viewModelScope.launch { demoDataSeeder.seed() }
     }
 }
