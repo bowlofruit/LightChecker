@@ -6,6 +6,12 @@ on:
     - cron: '5 * * * *'
   workflow_dispatch: # Manual trigger
 
+# Never let two ingestion runs (scheduled + manual, or an overrunning hour) write
+# Firestore concurrently — serialize, don't cancel an in-flight write.
+concurrency:
+  group: update-schedules
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -16,7 +22,8 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: "24"
+          # Match the deployed Functions runtime (Node 20).
+          node-version: "20"
           cache: 'npm'
           cache-dependency-path: LightChecker/functions/package-lock.json
 
@@ -29,7 +36,10 @@ jobs:
         run: npx tsc
 
       - name: Write Firebase credentials
-        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/firebase-sa.json
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        # printf via env indirection: no log exposure, and robust to quotes in the JSON.
+        run: printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > /tmp/firebase-sa.json
 
       - name: Run schedule update
         working-directory: LightChecker/functions

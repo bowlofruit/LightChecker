@@ -1,0 +1,67 @@
+name: LightChecker Android
+
+on:
+  push:
+    paths:
+      - "LightChecker/app/**"
+      - "LightChecker/gradle/**"
+      - "LightChecker/*.gradle.kts"
+      - "LightChecker/gradle.properties"
+      - ".github/workflows/android-ci.yml"
+  pull_request:
+    paths:
+      - "LightChecker/app/**"
+      - "LightChecker/gradle/**"
+      - "LightChecker/*.gradle.kts"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: LightChecker
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # The real google-services.json is gitignored. The Google Services plugin only
+      # needs a structurally valid file (matching applicationId) to process a debug
+      # build — it does not contact Firebase at build time. Generate a placeholder so
+      # CI can compile, unit-test, and lint without committing real Firebase config.
+      - name: Generate placeholder google-services.json
+        run: |
+          cat > app/google-services.json <<'JSON'
+          {
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "lightchecker-ci"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
+                  "android_client_info": {
+                    "package_name": "com.bowlof.lightchecker"
+                  }
+                },
+                "api_key": [
+                  { "current_key": "AIzaSyA0000000000000000000000000000000" }
+                ],
+                "oauth_client": [],
+                "services": {
+                  "appinvite_service": { "other_platform_oauth_client": [] }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          JSON
+
+      - name: Unit tests + Detekt
+        run: ./gradlew :app:testDebugUnitTest detekt --stacktrace

@@ -19,7 +19,8 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: "24"
+          # Match the deployed Functions runtime (Node 20), not a newer major.
+          node-version: "20"
           cache: npm
           cache-dependency-path: LightChecker/functions/package-lock.json
       - run: npm ci
