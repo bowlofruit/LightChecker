@@ -79,8 +79,10 @@ class LocationsRepositoryImpl @Inject constructor(
 
     override suspend fun setWidgetPrimary(id: Long) {
         database.withTransaction {
-            dao.clearAllPrimaryFlags()
+            // Look up first: never clear the existing primary unless the target row exists,
+            // otherwise a race (row deleted concurrently) leaves zero widget-primary rows.
             val row = dao.getById(id) ?: return@withTransaction
+            dao.clearAllPrimaryFlags()
             dao.update(row.copy(isWidgetPrimary = true))
         }
         topicManager.syncSubscriptionsAfterDataChange()

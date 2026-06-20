@@ -42,4 +42,11 @@ class ValidateSchedulePayloadTest {
         val r = ValidateSchedulePayload.validate(1, 1L, 20260323L, listOf(120, 60))
         assertTrue(r.isFailure)
     }
+
+    @Test
+    fun `rejects non-positive version`() {
+        val r = ValidateSchedulePayload.validate(1, 0L, 20260323L, listOf(480, 600))
+        assertTrue(r.isFailure)
+        assertTrue(r.exceptionOrNull() is SyncException.Parse)
+    }
 }

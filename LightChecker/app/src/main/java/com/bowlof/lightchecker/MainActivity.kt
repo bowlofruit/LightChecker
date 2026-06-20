@@ -1,6 +1,7 @@
 package com.bowlof.lightchecker
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,6 +12,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -25,25 +29,44 @@ import android.os.SystemClock
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    // Snapshot state so a notification tap while the activity is alive (delivered via
+    // onNewIntent under SINGLE_TOP) re-drives the NavHost deep link instead of being lost.
+    private var deepLink by mutableStateOf<DeepLinkArgs?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val deepLinkRegion = intent?.getStringExtra(EXTRA_NOTIFICATION_REGION)
-        val deepLinkQueue = intent?.getStringExtra(EXTRA_NOTIFICATION_QUEUE)
+        deepLink = intent?.toDeepLinkOrNull()
 
         setContent {
             LightCheckerTheme {
                 NotificationPermissionRequestEffect()
                 ReportFullyDrawnAfterFirstFrameEffect()
+                val link = deepLink
                 LightCheckerNavHost(
                     modifier = Modifier.fillMaxSize(),
-                    deepLinkRegionId = deepLinkRegion,
-                    deepLinkQueueId = deepLinkQueue,
+                    deepLinkRegionId = link?.regionId,
+                    deepLinkQueueId = link?.queueId,
                 )
             }
         }
     }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        deepLink = intent.toDeepLinkOrNull()
+    }
+}
+
+private data class DeepLinkArgs(val regionId: String, val queueId: String)
+
+private fun Intent.toDeepLinkOrNull(): DeepLinkArgs? {
+    val region = getStringExtra(EXTRA_NOTIFICATION_REGION) ?: return null
+    val queue = getStringExtra(EXTRA_NOTIFICATION_QUEUE) ?: return null
+    return DeepLinkArgs(region, queue)
 }
 
 @Composable

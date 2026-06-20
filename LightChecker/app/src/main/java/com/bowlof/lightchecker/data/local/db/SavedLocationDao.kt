@@ -45,9 +45,6 @@ interface SavedLocationDao {
     @Query("UPDATE saved_locations SET notifications_enabled = :enabled WHERE id = :id")
     suspend fun setNotificationsEnabled(id: Long, enabled: Boolean)
 
-    @Query("SELECT * FROM saved_locations ORDER BY sort_order ASC, id ASC")
-    fun getAllSnapshotSync(): List<SavedLocationEntity>
-
     @Query("UPDATE saved_locations SET sort_order = :sortOrder WHERE id = :id")
     suspend fun updateSortOrder(id: Long, sortOrder: Int)
 }

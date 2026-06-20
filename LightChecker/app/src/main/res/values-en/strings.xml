@@ -17,6 +17,8 @@
     <string name="schedule_all_done">No more outages</string>
     <string name="schedule_tab_place_cd">Schedule: %1$s, queue %2$s</string>
     <string name="schedule_day_segment_cd">Schedule day: %1$s</string>
+    <string name="schedule_add_widget">Add widget</string>
+    <string name="schedule_set_widget">Show on widget</string>
 
     <string name="onboarding_title">Add place</string>
     <string name="onboarding_subtitle">Select a city and outage schedule queue.</string>
@@ -26,6 +28,7 @@
     <string name="onboarding_use_location">Detect city by location</string>
     <string name="onboarding_catalog_error">Failed to load city catalog.</string>
     <string name="onboarding_pick_city_queue">Select a city and queue.</string>
+    <string name="onboarding_duplicate">%1$s is already in the list</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_places">Saved places</string>

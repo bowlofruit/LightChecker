@@ -9,26 +9,32 @@ object ValidateSchedulePayload {
 
     fun validate(
         schemaVersion: Int,
-        @Suppress("unused") version: Long,
+        version: Long,
         dayYyyymmdd: Long,
         slotMinutes: List<Int>,
     ): Result<Unit> {
-        if (schemaVersion != 1) {
-            return Result.failure(SyncException.Parse("unsupported_schema_f=$schemaVersion"))
+        val reason = when {
+            schemaVersion != 1 -> "unsupported_schema_f=$schemaVersion"
+            version < 1L -> "invalid_v=$version"
+            dayYyyymmdd !in MIN_D..MAX_D -> "invalid_d=$dayYyyymmdd"
+            slotMinutes.size % 2 != 0 -> "s_not_pairs"
+            else -> firstInvalidSlotReason(slotMinutes)
         }
-        if (dayYyyymmdd !in MIN_D..MAX_D) {
-            return Result.failure(SyncException.Parse("invalid_d=$dayYyyymmdd"))
+        return if (reason == null) {
+            Result.success(Unit)
+        } else {
+            Result.failure(SyncException.Parse(reason))
         }
-        if (slotMinutes.size % 2 != 0) {
-            return Result.failure(SyncException.Parse("s_not_pairs"))
-        }
+    }
+
+    private fun firstInvalidSlotReason(slotMinutes: List<Int>): String? {
         for (i in slotMinutes.indices step 2) {
             val a = slotMinutes[i]
             val b = slotMinutes[i + 1]
             if (a !in 0..1440 || b !in 0..1440 || a > b) {
-                return Result.failure(SyncException.Parse("invalid_slot_$a,$b"))
+                return "invalid_slot_$a,$b"
             }
         }
-        return Result.success(Unit)
+        return null
     }
 }

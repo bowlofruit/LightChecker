@@ -53,6 +53,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
+import android.content.Context
 import com.bowlof.lightchecker.BuildConfig
 import com.bowlof.lightchecker.R
 import com.bowlof.lightchecker.widget.OutageWidgetReceiver
@@ -104,13 +105,7 @@ fun ScheduleRoute(
             floatingActionButton = {
                 val context = LocalContext.current
                 FloatingActionButton(
-                    onClick = {
-                        val appWidgetManager = AppWidgetManager.getInstance(context)
-                        val provider = ComponentName(context, OutageWidgetReceiver::class.java)
-                        if (appWidgetManager.isRequestPinAppWidgetSupported) {
-                            appWidgetManager.requestPinAppWidget(provider, null, null)
-                        }
-                    },
+                    onClick = { requestPinWidget(context) },
                 ) {
                     Icon(Icons.Default.Widgets, contentDescription = stringResource(R.string.schedule_add_widget))
                 }
@@ -240,48 +235,56 @@ fun ScheduleRoute(
                     )
                 }
 
-                when {
-                    ui.places.isEmpty() -> {
-                        EmptyStateBox(
-                            icon = Icons.Outlined.AddLocationAlt,
-                            message = stringResource(R.string.onboarding_pick_city_queue),
-                            actionLabel = stringResource(R.string.settings_add_place),
-                            onAction = onOpenSettings,
-                            modifier = Modifier.padding(32.dp),
-                        )
-                    }
+                ScheduleDayContent(ui = ui, onOpenSettings = onOpenSettings)
+            }
+        }
+    }
+}
 
-                    !ui.hasDataForSelectedDay && ui.intervalLines.isEmpty() -> {
-                        EmptyStateBox(
-                            icon = Icons.Outlined.EventBusy,
-                            message = stringResource(R.string.schedule_empty_day),
-                            modifier = Modifier.padding(32.dp),
-                        )
-                    }
+@Composable
+private fun ScheduleDayContent(
+    ui: ScheduleUiState,
+    onOpenSettings: () -> Unit,
+) {
+    when {
+        ui.places.isEmpty() -> {
+            EmptyStateBox(
+                icon = Icons.Outlined.AddLocationAlt,
+                message = stringResource(R.string.onboarding_pick_city_queue),
+                actionLabel = stringResource(R.string.settings_add_place),
+                onAction = onOpenSettings,
+                modifier = Modifier.padding(32.dp),
+            )
+        }
 
-                    ui.intervalLines.isNotEmpty() -> {
-                        LazyColumn(
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            items(ui.intervalLines, key = { it }) { line ->
-                                ListItem(
-                                    headlineContent = { Text(line) },
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                    }
+        !ui.hasDataForSelectedDay && ui.intervalLines.isEmpty() -> {
+            EmptyStateBox(
+                icon = Icons.Outlined.EventBusy,
+                message = stringResource(R.string.schedule_empty_day),
+                modifier = Modifier.padding(32.dp),
+            )
+        }
 
-                    else -> {
-                        EmptyStateBox(
-                            icon = Icons.Outlined.LightMode,
-                            message = stringResource(R.string.schedule_no_outages),
-                            modifier = Modifier.padding(32.dp),
-                        )
-                    }
+        ui.intervalLines.isNotEmpty() -> {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                items(ui.intervalLines, key = { it }) { line ->
+                    ListItem(
+                        headlineContent = { Text(line) },
+                        modifier = Modifier.animateItem(),
+                    )
                 }
             }
+        }
+
+        else -> {
+            EmptyStateBox(
+                icon = Icons.Outlined.LightMode,
+                message = stringResource(R.string.schedule_no_outages),
+                modifier = Modifier.padding(32.dp),
+            )
         }
     }
 }
@@ -342,5 +345,14 @@ private fun CountdownBanner(
                 else -> MaterialTheme.colorScheme.onPrimaryContainer
             },
         )
+    }
+}
+
+/** Ask the launcher to pin the outage widget (no-op if the launcher doesn't support pinning). */
+private fun requestPinWidget(context: Context) {
+    val appWidgetManager = AppWidgetManager.getInstance(context)
+    val provider = ComponentName(context, OutageWidgetReceiver::class.java)
+    if (appWidgetManager.isRequestPinAppWidgetSupported) {
+        appWidgetManager.requestPinAppWidget(provider, null, null)
     }
 }

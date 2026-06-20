@@ -55,10 +55,20 @@ android {
                 "proguard-rules.pro"
             )
             val releaseCfg = signingConfigs.getByName("release")
-            signingConfig = if (releaseCfg.storeFile?.exists() == true) {
-                releaseCfg
-            } else {
-                signingConfigs.getByName("debug")
+            val hasKeystore = releaseCfg.storeFile?.exists() == true
+            signingConfig = if (hasKeystore) releaseCfg else signingConfigs.getByName("debug")
+            if (!hasKeystore) {
+                // Don't silently ship a debug-signed release artifact. Fail only when an actual
+                // release artifact is requested; debug/test tasks stay unaffected.
+                val wantsReleaseArtifact = gradle.startParameter.taskNames.any { task ->
+                    task.contains("Release") && (task.contains("assemble") || task.contains("bundle"))
+                }
+                if (wantsReleaseArtifact) {
+                    throw GradleException(
+                        "Release signing keystore not configured (set LIGHTCHECKER_STORE_FILE). " +
+                            "Refusing to build a debug-signed release artifact.",
+                    )
+                }
             }
         }
     }
@@ -132,6 +142,7 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.androidx.room.testing)
     testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.work.testing)
     testImplementation(libs.robolectric)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

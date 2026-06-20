@@ -10,11 +10,15 @@ object OutageIntervalFormatter {
     private val timeFormatter =
         DateTimeFormatter.ofPattern("HH:mm", Locale.forLanguageTag("uk"))
 
-    fun format(interval: OutageInterval): String {
-        val a = interval.startMinute.coerceIn(0, 24 * 60 - 1)
-        val b = interval.endMinute.coerceIn(0, 24 * 60 - 1)
-        val ta = LocalTime.ofSecondOfDay(a * 60L)
-        val tb = LocalTime.ofSecondOfDay(b * 60L)
-        return "${ta.format(timeFormatter)}–${tb.format(timeFormatter)}"
+    fun format(interval: OutageInterval): String =
+        "${formatMinute(interval.startMinute)}–${formatMinute(interval.endMinute)}"
+
+    private fun formatMinute(minute: Int): String {
+        // End-of-day is encoded as 1440; render it as 24:00 instead of collapsing to 23:59.
+        if (minute >= MINUTES_PER_DAY) return "24:00"
+        val time = LocalTime.ofSecondOfDay(minute.coerceIn(0, MINUTES_PER_DAY - 1) * 60L)
+        return time.format(timeFormatter)
     }
+
+    private const val MINUTES_PER_DAY = 24 * 60
 }

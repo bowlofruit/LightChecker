@@ -44,6 +44,7 @@ internal fun DocumentSnapshot.toFirestoreScheduleDtosOrEmpty(): List<FirestoreSc
 private fun dayMapEntryToDto(days: Map<String, Any>, key: String): FirestoreScheduleDto? {
     val raw = days[key] as? Map<*, *> ?: return null
     val v = (raw["v"] as? Number)?.toLong() ?: return null
+
     @Suppress("UNCHECKED_CAST")
     val sList = raw["s"] as? List<*>
     val s = sList?.mapNotNull { (it as? Number)?.toInt() } ?: return null
