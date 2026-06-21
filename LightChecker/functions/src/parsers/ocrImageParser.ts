@@ -41,11 +41,8 @@ export class OcrImageParser implements ScheduleParser {
 function extractAllTimeRanges(text: string): [number, number][] {
   const results: [number, number][] = [];
   const patterns = [
-    // "з HH:MM по HH:MM" (Ukrainian oblenergo format)
     /з\s*(\d{1,2})[:.:](\d{2})\s*по\s*(\d{1,2})[:.:](\d{2})/g,
-    // "з HH:MM до HH:MM"
     /з\s*(\d{1,2})[:.:](\d{2})\s*до\s*(\d{1,2})[:.:](\d{2})/g,
-    // "HH:MM - HH:MM" or "HH:MM–HH:MM"
     /(\d{1,2})[:.:](\d{2})\s*[-–—]\s*(\d{1,2})[:.:](\d{2})/g,
   ];
 
@@ -55,7 +52,6 @@ function extractAllTimeRanges(text: string): [number, number][] {
       const startMin = parseInt(m[1]) * 60 + parseInt(m[2]);
       const endMin = parseInt(m[3]) * 60 + parseInt(m[4]);
       if (startMin < endMin && endMin <= 1440) {
-        // Avoid duplicates
         if (!results.some(([s, e]) => s === startMin && e === endMin)) {
           results.push([startMin, endMin]);
         }
@@ -80,7 +76,6 @@ function extractQueueIntervals(
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // Check for queue header: "1.1", "2.2", "4. 1" (OCR may add space)
     const queueMatch = trimmed.match(/^(\d+)[.,\s]*(\d+)\s*$/);
     if (queueMatch) {
       currentQueue = `${queueMatch[1]}.${queueMatch[2]}`;
@@ -88,7 +83,6 @@ function extractQueueIntervals(
       continue;
     }
 
-    // Check for inline queue + time: "1.1  з 11:30 по 14:00"
     const inlineMatch = trimmed.match(/^(\d+)[.,](\d+)\s+(.*)/);
     if (inlineMatch) {
       currentQueue = `${inlineMatch[1]}.${inlineMatch[2]}`;
@@ -98,7 +92,6 @@ function extractQueueIntervals(
       continue;
     }
 
-    // Extract time ranges for current queue
     if (currentQueue) {
       const intervals = extractAllTimeRanges(trimmed);
       if (intervals.length > 0) {

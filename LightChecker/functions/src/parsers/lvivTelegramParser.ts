@@ -69,7 +69,7 @@ export class LvivTelegramParser implements ScheduleParser {
 
         return { scheduleDayYyyymmdd, queues, usedPostId: postId };
       } catch {
-        // наступний кандидат
+        continue;
       }
     }
 
@@ -106,7 +106,6 @@ export function parseLvivScheduleText(
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Try to find queue header line: "1.1  1.2" or "4. 1  4.2"
     const queueIds = extractQueueIds(line);
     if (queueIds.length > 0) {
       currentQueues = queueIds;
@@ -116,20 +115,15 @@ export function parseLvivScheduleText(
       continue;
     }
 
-    // Рядок статусу без годин — лише контекст для OCR, інтервалів немає
     const timeRanges = extractTimeRanges(line);
     if (timeRanges.length === 0) continue;
 
-    // Time line (може бути разом із «Електроенергія є / немає») — колонки по позиції в рядку
     if (currentQueues.length > 0) {
       if (currentQueues.length >= 2 && timeRanges.length >= 2) {
-        // 2 queues, 2+ ranges — split by position
         assignByPosition(line, currentQueues, result);
       } else if (timeRanges.length === 1 && currentQueues.length >= 2) {
-        // 1 range — could belong to either queue; use position
         assignByPosition(line, currentQueues, result);
       } else {
-        // Single queue or fallback
         const q = currentQueues[0];
         result.get(q)?.push(...timeRanges);
       }
@@ -140,11 +134,9 @@ export function parseLvivScheduleText(
 }
 
 function extractQueueIds(line: string): string[] {
-  // Match "1.1", "4. 1", "6.2" etc — must not contain time patterns
   if (/\d{1,2}:\d{2}/.test(line)) return [];
   if (/електроенерг/i.test(line)) return [];
 
-  // Normalize OCR artifacts: "а.1" → "4.1" (Cyrillic "а" misread as digit "4")
   const normalized = line
     .replace(/а(?=[.,\s]*\d)/g, "4")
     .replace(/б(?=[.,\s]*\d)/g, "6");
@@ -164,7 +156,6 @@ function extractQueueIds(line: string): string[] {
 
 function extractTimeRanges(text: string): [number, number][] {
   const results: [number, number][] = [];
-  // Normalize OCR: "3 07:00 no 10:00" → "з 07:00 до 10:00"
   const normalized = text
     .replace(/\bno\b/gi, "до")
     .replace(/\bpo\b/gi, "до")
@@ -189,7 +180,6 @@ function assignByPosition(
   result: Map<string, [number, number][]>,
 ): void {
   if (queueIds.length === 0) return;
-  // Normalize before parsing
   const normalized = timeLine
     .replace(/\bno\b/gi, "до")
     .replace(/\bpo\b/gi, "до")

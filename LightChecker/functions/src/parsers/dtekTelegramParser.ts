@@ -104,7 +104,7 @@ export class DtekTelegramParser implements ScheduleParser {
           result.set(queueId, list);
         }
       } catch {
-        // Skip unprocessable images
+        continue;
       }
     }
 
@@ -197,13 +197,11 @@ function parseDtekScheduleText(
  * "34 Черга" → "3.1"
  */
 function extractQueueIds(line: string): string[] {
-  // Match "1.1 Черга", "4. 1 Черга", "11 Черга", "24 Черга"
   const re = /(\d)[.,\s]*(\d)\s*Черг/gi;
   const ids: string[] = [];
   let m: RegExpExecArray | null;
   while ((m = re.exec(line)) !== null) {
     let minor = m[2];
-    // Fix "24"→"2.1" (OCR reads ".1" as "4")
     if (parseInt(minor) > 2) minor = "1";
     ids.push(`${m[1]}.${minor}`);
   }
@@ -220,7 +218,6 @@ function findTimeLine(
     i < Math.min(lines.length, startIdx + maxLookahead);
     i++
   ) {
-    // Match both "07:00" and OCR-broken "307.00" or "31730"
     if (/\d{1,2}[:.]\d{2}/.test(lines[i]) || /3\d{4,5}/.test(lines[i])) return lines[i];
   }
   return null;
@@ -238,17 +235,16 @@ function assignByPosition(
 ): void {
   if (queueIds.length === 0) return;
 
-  // Normalize common OCR artifacts before parsing:
   const normalized = timeLine
-    .replace(/\u041E\u041E/g, "00")               // Cyrillic "ОО" → "00"
-    .replace(/\u041E(?=\d|:)/g, "0")             // Cyrillic "О" → "0" before digit/colon
-    .replace(/3(\d{2})(\d{2})/g, "3 $1:$2")    // "31730" → "3 17:30"
-    .replace(/3(\d{2})\.(\d{2})/g, "3 $1:$2")   // "307.00" → "3 07:00"
-    .replace(/(\d{2})\.(\d{2})/g, "$1:$2")      // "11.00" → "11:00"
-    .replace(/\bpo\b/gi, "до")                   // "po" → "до"
-    .replace(/\bno\b/gi, "до")                   // "no" → "до"
-    .replace(/\bgo\b/gi, "до")                   // "go" → "до"
-    .replace(/з\s+(\d{1,2})\s+(до|по)/g, "з $1:00 $2"); // "з 00 до" → "з 00:00 до"
+    .replace(/\u041E\u041E/g, "00")
+    .replace(/\u041E(?=\d|:)/g, "0")
+    .replace(/3(\d{2})(\d{2})/g, "3 $1:$2")
+    .replace(/3(\d{2})\.(\d{2})/g, "3 $1:$2")
+    .replace(/(\d{2})\.(\d{2})/g, "$1:$2")
+    .replace(/\bpo\b/gi, "до")
+    .replace(/\bno\b/gi, "до")
+    .replace(/\bgo\b/gi, "до")
+    .replace(/з\s+(\d{1,2})\s+(до|по)/g, "з $1:00 $2");
 
   const segmentWidth = normalized.length / queueIds.length;
   const re =
@@ -257,7 +253,6 @@ function assignByPosition(
   while ((m = re.exec(normalized)) !== null) {
     const startMin = parseInt(m[1]) * 60 + parseInt(m[2]);
     let endMin = parseInt(m[3]) * 60 + parseInt(m[4]);
-    // Fix OCR: "17:30 до 2:00" should be "17:30 до 21:00"
     if (endMin < startMin && endMin < 360) {
       endMin = parseInt(m[3] + "1") * 60 + parseInt(m[4]);
     }

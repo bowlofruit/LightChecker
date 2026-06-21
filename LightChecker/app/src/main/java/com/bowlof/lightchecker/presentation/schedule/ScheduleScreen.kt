@@ -294,7 +294,6 @@ private fun CountdownBanner(
     intervals: List<OutageInterval>,
     modifier: Modifier = Modifier,
 ) {
-    // Recompute every 60 seconds
     var tick by remember { mutableIntStateOf(0) }
     LaunchedEffect(tick) {
         delay(60_000)

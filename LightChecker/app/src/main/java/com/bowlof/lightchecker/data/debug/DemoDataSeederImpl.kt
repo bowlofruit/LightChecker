@@ -27,7 +27,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-@Suppress("MagicNumber") // intentional fixed demo schedule values
+@Suppress("MagicNumber")
 class DemoDataSeederImpl @Inject constructor(
     private val database: LightCheckerDatabase,
     @ApplicationContext private val context: Context,
@@ -56,7 +56,6 @@ class DemoDataSeederImpl @Inject constructor(
 
         val locationDao = database.savedLocationDao()
         database.withTransaction {
-            // Replace any existing local state with a fresh, coherent demo dataset.
             locationDao.getAllSnapshot().forEach { locationDao.delete(it) }
             database.outageSlotDao().deleteOlderThan(Long.MAX_VALUE)
             database.syncMetaDao().deleteOlderThan(Long.MAX_VALUE)

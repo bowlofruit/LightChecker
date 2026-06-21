@@ -30,8 +30,6 @@ import android.os.SystemClock
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    // Snapshot state so a notification tap while the activity is alive (delivered via
-    // onNewIntent under SINGLE_TOP) re-drives the NavHost deep link instead of being lost.
     private var deepLink by mutableStateOf<DeepLinkArgs?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,8 +89,6 @@ private fun NotificationPermissionRequestEffect() {
             ) ?: false
             if (shouldShowRationale) {
                 Timber.d("Notification permission rationale should be shown")
-                // Rationale dialog: explain why notifications are needed
-                //  before requesting the permission again (future enhancement).
             }
             launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }

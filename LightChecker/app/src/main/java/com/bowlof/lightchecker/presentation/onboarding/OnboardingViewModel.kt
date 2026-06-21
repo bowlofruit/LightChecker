@@ -96,7 +96,6 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch {
             _ui.update { it.copy(isSaving = true, duplicateMessage = null) }
 
-            // Check for duplicate
             val existing = locationsRepository.observeSavedPlaces().first()
             val isDuplicate = existing.any { it.regionId == queue.regionId && it.queueId == queue.queueId }
             if (isDuplicate) {

@@ -32,10 +32,8 @@ export async function updateAllCities(
   const day = kyivTodayYyyymmdd();
   const results: CityResult[] = [];
 
-  // Cherkasy — text-based parser
   results.push(await processCherkasy(db, messaging, day));
 
-  // DTEK cities — OCR-based parsers (Kyiv, Odesa, Dnipro)
   const dtekCities = [
     { regionId: "kyiv", label: "Kyiv" },
     { regionId: "odesa", label: "Odesa" },
@@ -46,7 +44,6 @@ export async function updateAllCities(
     results.push(await processDtekCity(db, messaging, day, city.regionId, city.label));
   }
 
-  // Lviv — OCR-based parser
   results.push(await processLviv(db, messaging, day));
 
   return results;
@@ -65,7 +62,6 @@ async function processCherkasy(
     });
     const html = await res.text();
 
-    // Extract text from Telegram HTML
     const msgRe = /<div class="tgme_widget_message_text[^"]*"[^>]*>([\s\S]*?)<\/div>/g;
     const messages: string[] = [];
     let m: RegExpExecArray | null;

@@ -73,7 +73,6 @@ class ScheduleViewModel @Inject constructor(
         .distinctUntilChanged()
 
     init {
-        // Auto-refresh all saved places once per process launch (not on every VM recreation).
         if (autoRefreshTriggered.compareAndSet(false, true)) {
             viewModelScope.launch {
                 locationsRepository.observeSavedPlaces().first().forEach { place ->

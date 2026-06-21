@@ -119,11 +119,9 @@ export async function applyScheduleDayWrite(
       !!prevEntry && JSON.stringify(prevEntry.s) === JSON.stringify(flat);
 
     if (contentSame) {
-      // Контент не змінився: пропускаємо повністю лише якщо FCM уже доставлено.
       if (prevEntry!.fv >= prevEntry!.v) {
         return { kind: "skip" };
       }
-      // FCM раніше не пройшов — перешлемо без зміни версії/слотів.
       return { kind: "send", version: prevEntry!.v };
     }
 
@@ -155,12 +153,10 @@ export async function applyScheduleDayWrite(
       data: { r: regionId, q: queueId, v: String(version), d: dayKey },
     });
   } catch (e) {
-    // Версію вже закомічено, але fv лишається позаду — наступний запуск повторить FCM.
     logger.warn("schedule_fcm_send_failed", { docId, v: version, err: String(e) });
     return { skipped: false, docId, version };
   }
 
-  // FCM пройшов — позначаємо fv=version, щоб ідентичний наступний запуск не дублював сповіщення.
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists) return;

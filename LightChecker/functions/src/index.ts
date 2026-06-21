@@ -27,7 +27,6 @@ if (!getApps().length) {
   initializeApp();
 }
 
-// Deploy closest to the Ukrainian audience and Telegram sources (lower latency/egress).
 setGlobalOptions({ region: "europe-west1" });
 
 /** Constant-time API-key check (avoids leaking length/prefix via `!==` short-circuit). */

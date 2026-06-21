@@ -2,14 +2,12 @@ package com.bowlof.lightchecker.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// ── Shared palette ──────────────────────────────────────────
 val Amber500 = Color(0xFFF59E0B)
 val Amber400 = Color(0xFFFBBF24)
 val Amber50 = Color(0xFFFFFBEB)
 val DarkBlue = Color(0xFF1E3A5F)
 val Teal600 = Color(0xFF0D9488)
 
-// ── Neutral / surface ───────────────────────────────────────
 val Stone900 = Color(0xFF1C1917)
 val Stone950 = Color(0xFF0C0A09)
 val Blue300 = Color(0xFF93C5FD)
@@ -25,6 +23,5 @@ val OnSurfaceDark = Color(0xFFE6E1D9)
 val PrimaryContainerDark = Color(0xFF5C3D00)
 val TealDark = Color(0xFF2DD4BF)
 
-// ── Error ───────────────────────────────────────────────────
 val Red600 = Color(0xFFDC2626)
 val Red500 = Color(0xFFEF4444)

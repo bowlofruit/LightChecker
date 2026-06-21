@@ -19,7 +19,7 @@ fun BootstrapRoute(
 ) {
     val target by viewModel.targetRoute.collectAsStateWithLifecycle()
     LaunchedEffect(target) {
-        val route = target ?: return@LaunchedEffect // Wait until DB responds
+        val route = target ?: return@LaunchedEffect
         navController.navigate(route) {
             popUpTo(NavRoutes.BOOTSTRAP) { inclusive = true }
             launchSingleTop = true

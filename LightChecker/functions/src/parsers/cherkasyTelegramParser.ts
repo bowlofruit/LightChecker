@@ -21,7 +21,6 @@ export class CherkasyTelegramParser implements ScheduleParser {
     const text = typeof data === "string" ? data : data.toString("utf-8");
     const pairs: [number, number][] = [];
 
-    // Pattern 1: process line-by-line for "4.1 09:00 - 11:00, 15:00 - 17:00"
     let foundQueueLines = false;
     for (const line of text.split(/\n/)) {
       const lineMatch = line.match(/^(\d+\.\d+)\s+(.+)/);
@@ -34,7 +33,6 @@ export class CherkasyTelegramParser implements ScheduleParser {
 
     if (foundQueueLines) return pairs;
 
-    // Pattern 2: general "з HH:MM до HH:MM" (ГОП format)
     const gopRe = /з\s+(\d{1,2}):(\d{2})\s+до\s+(\d{1,2}):(\d{2})/g;
     let gopMatch: RegExpExecArray | null;
     while ((gopMatch = gopRe.exec(text)) !== null) {

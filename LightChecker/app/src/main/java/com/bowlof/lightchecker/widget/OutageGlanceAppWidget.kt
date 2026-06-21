@@ -58,7 +58,6 @@ private val TOMORROW_PARAM = ActionParameters.Key<Boolean>("tomorrow")
 class OutageGlanceAppWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        // Pre-load both days on IO thread
         val todayData = loadData(context, showTomorrow = false)
         val tomorrowData = loadData(context, showTomorrow = true)
 
