@@ -22,16 +22,13 @@ import com.bowlof.lightchecker.presentation.util.toScheduleUserMessage
 import com.bowlof.lightchecker.widget.OutageGlanceAppWidget
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -39,6 +36,9 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
@@ -51,7 +51,6 @@ data class ScheduleUiState(
     val hasDataForSelectedDay: Boolean = false,
     val lastSyncFormatted: String? = null,
     val intervals: List<OutageInterval> = emptyList(),
-    /** True when the schedule list shows built-in sample intervals (debug build toggle). */
     val isDemoUiData: Boolean = false,
 )
 
@@ -146,7 +145,6 @@ class ScheduleViewModel @Inject constructor(
     }
 
     companion object {
-        /** Process-wide guard so the first-open auto-refresh runs once per launch, not per VM. */
         private val autoRefreshTriggered = AtomicBoolean(false)
 
         private val KYIV_ZONE = ZoneId.of("Europe/Kyiv")

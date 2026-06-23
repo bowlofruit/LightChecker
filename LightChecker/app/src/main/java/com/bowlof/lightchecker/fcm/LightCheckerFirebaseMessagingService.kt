@@ -10,8 +10,8 @@ import androidx.work.WorkManager
 import com.bowlof.lightchecker.work.SyncScheduleWorker
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import java.util.concurrent.TimeUnit
 import timber.log.Timber
+import java.util.concurrent.TimeUnit
 
 class LightCheckerFirebaseMessagingService : FirebaseMessagingService() {
 

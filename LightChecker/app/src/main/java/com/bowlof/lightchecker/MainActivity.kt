@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -25,7 +26,6 @@ import com.bowlof.lightchecker.ui.theme.LightCheckerTheme
 import com.bowlof.lightchecker.work.SyncScheduleWorker
 import dagger.hilt.android.AndroidEntryPoint
 import timber.log.Timber
-import android.os.SystemClock
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {

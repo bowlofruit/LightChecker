@@ -10,7 +10,6 @@ sealed interface OutageStatus {
     /** Next outage starts in [minutesUntil] minutes, at [startsAtMinute]. */
     data class NextOff(val minutesUntil: Int, val startsAtMinute: Int) : OutageStatus
 
-    /** All outage windows for the day have passed. */
     data object AllDone : OutageStatus
 
     /** No schedule data available. */
@@ -41,7 +40,6 @@ object NextOutageCalculator {
         return OutageStatus.AllDone
     }
 
-    /** Format minutes-since-midnight as "HH:mm". */
     fun formatMinute(minute: Int): String {
         val h = minute / 60
         val m = minute % 60

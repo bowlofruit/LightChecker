@@ -3,9 +3,9 @@ package com.bowlof.lightchecker.data.repository
 import android.content.Context
 import androidx.glance.appwidget.updateAll
 import androidx.room.withTransaction
-import com.bowlof.lightchecker.data.local.toDomain
 import com.bowlof.lightchecker.data.local.db.LightCheckerDatabase
 import com.bowlof.lightchecker.data.local.db.SavedLocationEntity
+import com.bowlof.lightchecker.data.local.toDomain
 import com.bowlof.lightchecker.data.messaging.FirebaseTopicManager
 import com.bowlof.lightchecker.domain.model.LocationSource
 import com.bowlof.lightchecker.domain.model.SavedPlace

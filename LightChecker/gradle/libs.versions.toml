@@ -1,5 +1,5 @@
 [versions]
-agp = "9.1.1"
+agp = "9.2.1"
 googleServices = "4.4.4"
 firebaseBom = "34.11.0"
 firebaseCrashlytics = "19.4.1"

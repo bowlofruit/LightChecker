@@ -2,6 +2,7 @@ package com.bowlof.lightchecker.presentation.util
 
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import com.bowlof.lightchecker.domain.model.OutageInterval
+import com.bowlof.lightchecker.presentation.util.DemoSchedulePreview.uiDemoScheduleKey
 
 /** Sample outages for debug UI / widget screenshots; toggled via [uiDemoScheduleKey] in app preferences. */
 object DemoSchedulePreview {

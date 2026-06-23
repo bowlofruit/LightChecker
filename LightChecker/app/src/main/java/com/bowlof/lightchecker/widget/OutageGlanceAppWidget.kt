@@ -56,7 +56,6 @@ private val SHOW_TOMORROW_KEY = booleanPreferencesKey("show_tomorrow")
 private val TOMORROW_PARAM = ActionParameters.Key<Boolean>("tomorrow")
 
 class OutageGlanceAppWidget : GlanceAppWidget() {
-
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val todayData = loadData(context, showTomorrow = false)
         val tomorrowData = loadData(context, showTomorrow = true)

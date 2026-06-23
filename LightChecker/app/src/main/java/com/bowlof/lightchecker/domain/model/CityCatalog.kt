@@ -1,8 +1,5 @@
 package com.bowlof.lightchecker.domain.model
 
-/**
- * Канонічна доменна модель довідника міст/черг (єдина для presentation і domain).
- */
 data class CityCatalog(
     val catalogVersion: Int,
     val cities: List<CatalogCity>,
